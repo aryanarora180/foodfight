@@ -12,6 +12,7 @@ export async function POST() {
     state.phase = "submission";
     state.restaurants = [];
     state.votes = {};
+    state.passes = {};
     return { ok: true as const };
   });
   return NextResponse.json({ state: toPublicState(state) });

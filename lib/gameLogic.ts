@@ -35,12 +35,17 @@ export function toPublicState(state: GameState): PublicState {
   const tie = winners.length > 1;
 
   const users: PublicUser[] = Object.values(state.users)
-    .map((u) => ({
-      username: u.username,
-      isAdmin: u.isAdmin,
-      hasSubmitted: state.restaurants.some((r) => r.submittedBy === u.username),
-      hasVoted: Boolean(state.votes[u.username]),
-    }))
+    .map((u) => {
+      const passedSubmission = Boolean(state.passes[u.username]);
+      return {
+        username: u.username,
+        isAdmin: u.isAdmin,
+        hasSubmitted:
+          state.restaurants.some((r) => r.submittedBy === u.username) || passedSubmission,
+        passedSubmission,
+        hasVoted: Boolean(state.votes[u.username]),
+      };
+    })
     .sort((a, b) => a.username.localeCompare(b.username));
 
   return {

@@ -11,6 +11,7 @@ function emptyState(): GameState {
     restaurants: [],
     votes: {},
     users: {},
+    passes: {},
     updatedAt: Date.now(),
   };
 }

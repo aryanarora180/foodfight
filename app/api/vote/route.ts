@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
       return { error: "ranking must include every restaurant exactly once" as const };
     }
     state.votes[username] = { username, order, votedAt: Date.now() };
+    const everyoneVoted = Object.values(state.users).every((u) => Boolean(state.votes[u.username]));
+    if (everyoneVoted) {
+      state.phase = "results";
+    }
     return { ok: true as const };
   });
 

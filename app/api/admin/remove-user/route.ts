@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     delete state.users[key];
     state.restaurants = state.restaurants.filter((r) => r.submittedBy !== user.username);
     delete state.votes[user.username];
+    delete state.passes[user.username];
     return { ok: true as const };
   });
 

@@ -115,9 +115,12 @@ export function VotingPhase({
         </div>
 
         <div>
-          <h3 className="font-display mb-3 text-lg text-sky">
-            Ballots so far ({state.votes.length})
+          <h3 className="font-display mb-1 text-lg text-sky">
+            Ballots so far ({state.votes.length}/{state.users.length})
           </h3>
+          <p className="mb-3 text-xs text-white/40">
+            results drop automatically the moment everyone&apos;s voted.
+          </p>
           {state.votes.length === 0 ? (
             <p className="text-white/40">no votes yet — everything&apos;s still up for grabs.</p>
           ) : (

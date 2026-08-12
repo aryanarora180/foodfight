@@ -25,6 +25,7 @@ export interface GameState {
   restaurants: Restaurant[];
   votes: Record<string, VoteRecord>;
   users: Record<string, UserRecord>;
+  passes: Record<string, boolean>;
   updatedAt: number;
 }
 
@@ -32,6 +33,7 @@ export interface PublicUser {
   username: string;
   isAdmin: boolean;
   hasSubmitted: boolean;
+  passedSubmission: boolean;
   hasVoted: boolean;
 }
 

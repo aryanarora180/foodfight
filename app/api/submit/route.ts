@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     } else {
       state.restaurants.push(restaurant);
     }
+    delete state.passes[username];
     return { ok: true as const };
   });
 
