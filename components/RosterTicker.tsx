@@ -11,7 +11,7 @@ export function RosterTicker({ users, phase }: { users: PublicUser[]; phase: Pha
 
   return (
     <div className="felt-panel rounded-2xl px-4 py-3">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-cyan/80">
+      <p className="mb-2 text-xs font-semibold tracking-wide text-sky/80">
         WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{users.length})
       </p>
       <div className="flex flex-wrap gap-2">

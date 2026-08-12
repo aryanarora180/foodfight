@@ -11,10 +11,10 @@ const schema = z.object({
   username: z
     .string()
     .trim()
-    .min(2, "Username must be at least 2 characters")
-    .max(24, "Username must be under 24 characters")
-    .regex(/^[a-zA-Z0-9_ -]+$/, "Letters, numbers, spaces, - and _ only"),
-  password: z.string().min(4, "Password must be at least 4 characters").max(200),
+    .min(2, "username must be at least 2 characters")
+    .max(24, "username must be under 24 characters")
+    .regex(/^[a-zA-Z0-9_ -]+$/, "letters, numbers, spaces, - and _ only"),
+  password: z.string().min(4, "password must be at least 4 characters").max(200),
 });
 
 export async function POST(req: NextRequest) {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { error: parsed.error.issues[0]?.message ?? "invalid input" },
       { status: 400 }
     );
   }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const existing = state.users[key];
     if (existing) {
       const ok = verifyPassword(password, existing.salt, existing.passwordHash);
-      if (!ok) return { error: "Wrong password" as const };
+      if (!ok) return { error: "wrong password" as const };
       return { user: existing };
     }
     const { hash, salt } = hashPassword(password);

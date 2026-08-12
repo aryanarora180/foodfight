@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0410;
-  --foreground: #fdf4ff;
-  --felt: #170a24;
-  --felt-2: #250f38;
+  --background: #05101f;
+  --foreground: #f2f7ff;
+  --felt: #0b2038;
+  --felt-2: #123a63;
   --gold: #ffd23f;
   --gold-2: #ffb703;
-  --magenta: #ff2fb0;
-  --cyan: #22d3ee;
-  --violet: #7c3aed;
+  --royal: #2f6fed;
+  --sky: #38bdf8;
+  --indigo: #1e40af;
   --win: #34d399;
 }
 
@@ -20,9 +20,9 @@
   --color-felt-2: var(--felt-2);
   --color-gold: var(--gold);
   --color-gold-2: var(--gold-2);
-  --color-magenta: var(--magenta);
-  --color-cyan: var(--cyan);
-  --color-violet: var(--violet);
+  --color-royal: var(--royal);
+  --color-sky: var(--sky);
+  --color-indigo: var(--indigo);
   --color-win: var(--win);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
@@ -38,7 +38,7 @@ body {
 }
 
 body {
-  background: radial-gradient(1200px 800px at 50% -10%, #2a1240 0%, var(--background) 55%),
+  background: radial-gradient(1200px 800px at 50% -10%, #163b66 0%, var(--background) 55%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -69,19 +69,19 @@ body {
   text-shadow:
     0 0 6px rgba(255, 210, 63, 0.8),
     0 0 18px rgba(255, 210, 63, 0.55),
-    0 0 40px rgba(255, 47, 176, 0.35);
+    0 0 40px rgba(47, 111, 237, 0.4);
 }
 
 .neon-border {
   box-shadow:
     0 0 0 1.5px rgba(255, 210, 63, 0.5) inset,
-    0 0 18px rgba(255, 47, 176, 0.25),
-    0 0 40px rgba(124, 58, 237, 0.18);
+    0 0 18px rgba(47, 111, 237, 0.3),
+    0 0 40px rgba(30, 64, 175, 0.22);
 }
 
 .felt-panel {
   background:
-    radial-gradient(120% 140% at 10% 0%, rgba(255, 47, 176, 0.08), transparent 55%),
+    radial-gradient(120% 140% at 10% 0%, rgba(47, 111, 237, 0.1), transparent 55%),
     linear-gradient(160deg, var(--felt) 0%, var(--felt-2) 100%);
   border: 1px solid rgba(255, 210, 63, 0.18);
 }

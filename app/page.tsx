@@ -10,7 +10,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <p className="font-display animate-pulse text-gold">Loading the tables…</p>
+        <p className="font-display animate-pulse text-gold">loading the tables…</p>
       </div>
     );
   }

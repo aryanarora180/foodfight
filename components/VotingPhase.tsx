@@ -33,13 +33,13 @@ export function VotingPhase({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ?? "something went wrong");
         return;
       }
       setEditing(false);
       onChanged();
     } catch {
-      setError("Network error — try again");
+      setError("network error — try again");
     } finally {
       setSubmitting(false);
     }
@@ -48,9 +48,9 @@ export function VotingPhase({
   return (
     <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
       <div className="felt-panel neon-border rounded-3xl p-6">
-        <h2 className="font-display mb-1 text-xl text-gold">Rank the field</h2>
+        <h2 className="font-display mb-1 text-xl text-gold">Shore up your rankings</h2>
         <p className="mb-5 text-sm text-white/50">
-          Drag to reorder — top is your favorite. 1st = {state.restaurants.length} pts, down to 1 pt.
+          drag to reorder — top is your favorite. 1st = {state.restaurants.length} pts, down to 1.
         </p>
 
         {error && (
@@ -85,7 +85,7 @@ export function VotingPhase({
               onClick={() => setEditing(true)}
               className="chip-btn-ghost mt-4 w-full rounded-full py-2.5 text-sm"
             >
-              Change my vote ✏️
+              re-level my vote ✏️
             </button>
           </div>
         )}
@@ -93,7 +93,7 @@ export function VotingPhase({
 
       <div className="flex flex-col gap-6">
         <div>
-          <h3 className="font-display mb-3 text-lg text-cyan">Live odds 📊</h3>
+          <h3 className="font-display mb-3 text-lg text-sky">Live odds 📊</h3>
           <div className="flex flex-col gap-3">
             {state.scores.map((s) => (
               <div key={s.restaurant.id} className="felt-panel rounded-2xl p-4">
@@ -103,7 +103,7 @@ export function VotingPhase({
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-black/40">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-magenta via-violet to-cyan"
+                    className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
                     initial={{ width: 0 }}
                     animate={{ width: `${(s.points / maxPoints) * 100}%` }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
@@ -115,11 +115,11 @@ export function VotingPhase({
         </div>
 
         <div>
-          <h3 className="font-display mb-3 text-lg text-cyan">
+          <h3 className="font-display mb-3 text-lg text-sky">
             Ballots so far ({state.votes.length})
           </h3>
           {state.votes.length === 0 ? (
-            <p className="text-white/40">No votes yet — everything&apos;s still up for grabs.</p>
+            <p className="text-white/40">no votes yet — everything&apos;s still up for grabs.</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {state.votes.map((v) => (

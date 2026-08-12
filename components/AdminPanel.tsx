@@ -20,25 +20,25 @@ export function AdminPanel({
       const res = await fetch(path, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ?? "something went wrong");
         return;
       }
       onChanged();
     } catch {
-      setError("Network error");
+      setError("network error");
     } finally {
       setLoading(null);
     }
   }
 
   function reset() {
-    if (!window.confirm("Reset the whole game? This clears all picks and votes.")) return;
+    if (!window.confirm("reset back to bedrock? this clears all picks and votes.")) return;
     call("/api/admin/reset", "reset");
   }
 
   return (
     <div className="bulb-border felt-panel neon-border rounded-3xl p-5">
-      <p className="font-display mb-3 text-sm tracking-wide text-magenta">👑 ADMIN CONTROLS</p>
+      <p className="font-display mb-3 text-sm tracking-wide text-royal">👑 ADMIN CONTROLS</p>
       {error && (
         <p className="mb-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
       )}
@@ -49,7 +49,7 @@ export function AdminPanel({
             disabled={loading !== null || state.restaurants.length < 2}
             className="chip-btn px-5 py-2.5 text-sm"
           >
-            {loading === "start" ? "STARTING…" : "START VOTING 🗳️"}
+            {loading === "start" ? "BREAKING GROUND…" : "BREAK GROUND 🧱"}
           </button>
         )}
         {state.phase === "voting" && (
@@ -58,7 +58,7 @@ export function AdminPanel({
             disabled={loading !== null}
             className="chip-btn px-5 py-2.5 text-sm"
           >
-            {loading === "reveal" ? "REVEALING…" : "REVEAL WINNER 🎉"}
+            {loading === "reveal" ? "SETTING…" : "SET IT IN STONE 🪨"}
           </button>
         )}
         <button
@@ -66,10 +66,10 @@ export function AdminPanel({
           disabled={loading !== null}
           className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
         >
-          {loading === "reset" ? "RESETTING…" : "RESET GAME 🔄"}
+          {loading === "reset" ? "RESETTING…" : "BACK TO BEDROCK 🪨"}
         </button>
         {state.phase === "submission" && state.restaurants.length < 2 && (
-          <p className="text-xs text-white/40">Need at least 2 picks before voting can start.</p>
+          <p className="text-xs text-white/40">need at least 2 picks before we can break ground.</p>
         )}
       </div>
     </div>

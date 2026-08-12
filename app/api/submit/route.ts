@@ -7,20 +7,20 @@ import { toPublicState } from "@/lib/gameLogic";
 import type { Restaurant } from "@/lib/types";
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Restaurant name is required").max(80),
-  url: z.string().trim().url("Must be a valid URL (include https://)").max(500),
+  name: z.string().trim().min(1, "restaurant name is required").max(80),
+  url: z.string().trim().url("must be a valid URL (include https://)").max(500),
 });
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session.username) {
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { error: parsed.error.issues[0]?.message ?? "invalid input" },
       { status: 400 }
     );
   }
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const username = session.username;
   const { state, result } = await updateState((state) => {
     if (state.phase !== "submission") {
-      return { error: "Submissions are closed" as const };
+      return { error: "submissions are closed" as const };
     }
     const existingIdx = state.restaurants.findIndex((r) => r.submittedBy === username);
     const restaurant: Restaurant = {

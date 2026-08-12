@@ -21,12 +21,12 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ?? "something went wrong");
         return;
       }
       onLoggedIn();
     } catch {
-      setError("Network error — try again");
+      setError("network error — try again");
     } finally {
       setLoading(false);
     }
@@ -64,8 +64,8 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             <br />
             FIGHT
           </h1>
-          <p className="mt-3 font-display text-xs tracking-[0.3em] text-cyan/80 sm:text-sm">
-            PICK · RANK · WIN LUNCH
+          <p className="mt-3 font-display text-xs tracking-[0.3em] text-sky/80 sm:text-sm">
+            PICK · RANK · LAY THE FOUNDATION
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             className="mb-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-foreground placeholder-white/30 outline-none focus:border-gold/60"
           />
           <p className="mb-5 text-xs text-white/40">
-            New here? Just pick a username &amp; password — your seat gets created automatically.
+            new here? just drop a username &amp; password — your seat gets built automatically.
           </p>
 
           {error && (

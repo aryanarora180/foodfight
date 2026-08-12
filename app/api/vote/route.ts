@@ -11,18 +11,18 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session.username) {
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid vote" }, { status: 400 });
+    return NextResponse.json({ error: "invalid vote" }, { status: 400 });
   }
 
   const username = session.username;
   const { state, result } = await updateState((state) => {
     if (state.phase !== "voting") {
-      return { error: "Voting is not open" as const };
+      return { error: "voting is not open" as const };
     }
     const restaurantIds = new Set(state.restaurants.map((r) => r.id));
     const order = parsed.data.order;
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       orderSet.size === order.length &&
       order.every((id) => restaurantIds.has(id));
     if (!valid) {
-      return { error: "Ranking must include every restaurant exactly once" as const };
+      return { error: "ranking must include every restaurant exactly once" as const };
     }
     state.votes[username] = { username, order, votedAt: Date.now() };
     return { ok: true as const };

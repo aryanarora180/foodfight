@@ -6,7 +6,7 @@ import { toPublicState } from "@/lib/gameLogic";
 export async function GET() {
   const session = await getSession();
   if (!session.username) {
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
   const state = await getState();
   return NextResponse.json({ state: toPublicState(state) });

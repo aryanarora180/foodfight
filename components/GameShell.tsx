@@ -9,9 +9,9 @@ import { AdminPanel } from "./AdminPanel";
 import { RosterTicker } from "./RosterTicker";
 
 const PHASE_LABEL: Record<string, string> = {
-  submission: "🍽️ Submissions open",
-  voting: "🗳️ Voting live",
-  results: "🏆 Results are in",
+  submission: "🧱 foundations open",
+  voting: "🗳️ voting live",
+  results: "🏆 results are set",
 };
 
 export function GameShell({
@@ -28,7 +28,7 @@ export function GameShell({
   if (!state) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <p className="font-display animate-pulse text-gold">Shuffling the deck…</p>
+        <p className="font-display animate-pulse text-gold">shuffling the deck…</p>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function GameShell({
           <h1 className="font-display neon-text text-2xl sm:text-3xl">FOOD FIGHT</h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-cyan/90">
+          <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-sky/90">
             {PHASE_LABEL[state.phase]}
           </span>
           <span className="rounded-full bg-white/5 px-3 py-1.5 text-sm">

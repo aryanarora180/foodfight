@@ -13,7 +13,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
   useEffect(() => {
     if (fired.current) return;
     fired.current = true;
-    const colors = ["#ffd23f", "#ff2fb0", "#22d3ee", "#7c3aed", "#34d399"];
+    const colors = ["#ffd23f", "#2f6fed", "#38bdf8", "#1e40af", "#34d399"];
     const duration = 1400;
     const end = Date.now() + duration;
     (function frame() {
@@ -30,7 +30,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
           <>
             <p className="text-5xl">🤝</p>
             <h2 className="font-display neon-text mt-2 text-3xl sm:text-4xl">IT&apos;S A TIE!</h2>
-            <p className="mt-2 text-white/60">Flip a coin, roll a die, or just go to both.</p>
+            <p className="mt-2 text-white/60">flip a coin, roll a die, or just hit both spots.</p>
           </>
         ) : state.winner ? (
           <>
@@ -47,7 +47,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             </h2>
             <p className="mt-2 text-white/60">
               wins with {state.winner.points} points ({state.winner.firstPlaceVotes} first-place
-              vote{state.winner.firstPlaceVotes === 1 ? "" : "s"})
+              vote{state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.
             </p>
             <a
               href={state.winner.restaurant.url}
@@ -59,12 +59,12 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             </a>
           </>
         ) : (
-          <p className="text-white/50">No votes were cast.</p>
+          <p className="text-white/50">no votes were cast.</p>
         )}
       </div>
 
       <div>
-        <h3 className="font-display mb-3 text-lg text-cyan">Final tally</h3>
+        <h3 className="font-display mb-3 text-lg text-sky">Final tally</h3>
         <div className="flex flex-col gap-3">
           {state.scores.map((s, idx) => (
             <motion.div
@@ -83,7 +83,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
               </div>
               <div className="h-4 overflow-hidden rounded-full bg-black/40">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-magenta via-violet to-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
                   initial={{ width: 0 }}
                   animate={{ width: `${(s.points / maxPoints) * 100}%` }}
                   transition={{ duration: 0.8, delay: idx * 0.12, ease: "easeOut" }}
@@ -96,7 +96,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       </div>
 
       <div>
-        <h3 className="font-display mb-3 text-lg text-cyan">Everyone&apos;s ballots</h3>
+        <h3 className="font-display mb-3 text-lg text-sky">Everyone&apos;s ballots</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           {state.votes.map((v) => (
             <div key={v.username} className="felt-panel rounded-2xl p-4">
