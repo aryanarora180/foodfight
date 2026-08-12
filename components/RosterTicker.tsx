@@ -1,13 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import type { Phase, PublicUser } from "@/lib/types";
 
-export function RosterTicker({ users, phase }: { users: PublicUser[]; phase: Phase }) {
+export function RosterTicker({
+  users,
+  phase,
+  isAdmin,
+  onChanged,
+}: {
+  users: PublicUser[];
+  phase: Phase;
+  isAdmin: boolean;
+  onChanged: () => void;
+}) {
+  const [removing, setRemoving] = useState<string | null>(null);
+
   if (users.length === 0) return null;
   const label = phase === "submission" ? "locked in a pick" : "voted";
   const doneCount = users.filter((u) =>
     phase === "submission" ? u.hasSubmitted : u.hasVoted
   ).length;
+
+  async function removeUser(username: string) {
+    if (!window.confirm(`kick ${username} out of the game?`)) return;
+    setRemoving(username);
+    try {
+      await fetch("/api/admin/remove-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      onChanged();
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   return (
     <div className="felt-panel rounded-2xl px-4 py-3">
@@ -21,15 +49,24 @@ export function RosterTicker({ users, phase }: { users: PublicUser[]; phase: Pha
             <span
               key={u.username}
               className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
-                done
-                  ? "bg-win/15 text-win"
-                  : "bg-white/5 text-white/40"
+                done ? "bg-win/15 text-win" : "bg-white/5 text-white/40"
               }`}
               title={done ? `${u.username} ${label}` : `${u.username} — waiting`}
             >
               {u.isAdmin && "👑"}
               {u.username}
               {done ? " ✓" : " …"}
+              {isAdmin && !u.isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => removeUser(u.username)}
+                  disabled={removing === u.username}
+                  aria-label={`remove ${u.username}`}
+                  className="ml-1 leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
+                >
+                  ×
+                </button>
+              )}
             </span>
           );
         })}

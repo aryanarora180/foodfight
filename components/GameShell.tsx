@@ -55,7 +55,12 @@ export function GameShell({
       </header>
 
       <div className="mb-6">
-        <RosterTicker users={state.users} phase={state.phase} />
+        <RosterTicker
+          users={state.users}
+          phase={state.phase}
+          isAdmin={isAdmin}
+          onChanged={() => mutate()}
+        />
       </div>
 
       {isAdmin && (
