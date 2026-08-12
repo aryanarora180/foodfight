@@ -10,8 +10,6 @@ export interface Restaurant {
 
 export interface UserRecord {
   username: string;
-  passwordHash: string;
-  salt: string;
   isAdmin: boolean;
   createdAt: number;
 }

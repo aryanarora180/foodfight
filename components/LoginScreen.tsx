@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 
 export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +16,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -79,20 +78,12 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             onChange={(e) => setUsername(e.target.value)}
             placeholder="hungry_hippo"
             required
-            className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-foreground placeholder-white/30 outline-none focus:border-gold/60"
-          />
-
-          <label className="mb-1 block text-sm font-semibold text-gold/90">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
+            autoFocus
             className="mb-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-foreground placeholder-white/30 outline-none focus:border-gold/60"
           />
           <p className="mb-5 text-xs text-white/40">
-            new here? just drop a username &amp; password — your seat gets built automatically.
+            no password — honor system. new name? your seat gets built automatically. just don&apos;t
+            go pretending to be someone else.
           </p>
 
           {error && (
