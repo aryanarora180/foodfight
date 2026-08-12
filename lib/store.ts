@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Redis } from "@upstash/redis";
+import Redis from "ioredis";
 import type { GameState } from "./types";
 
 const STATE_KEY = "foodfight:state";
@@ -15,15 +15,13 @@ function emptyState(): GameState {
   };
 }
 
-const hasRedis = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-);
+const hasRedis = Boolean(process.env.REDIS_URL);
 
-const redis = hasRedis ? Redis.fromEnv() : null;
+const redis = hasRedis ? new Redis(process.env.REDIS_URL!) : null;
 
 if (!hasRedis && process.env.NODE_ENV === "production") {
   console.warn(
-    "[foodfight] No Upstash Redis env vars found in production. Falling back to local file storage, which will NOT persist on Vercel. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
+    "[foodfight] No REDIS_URL env var found in production. Falling back to local file storage, which will NOT persist on Vercel. Connect a Redis database in Project Settings > Storage."
   );
 }
 
@@ -48,8 +46,8 @@ function writeFileState(state: GameState) {
 
 export async function getState(): Promise<GameState> {
   if (redis) {
-    const state = await redis.get<GameState>(STATE_KEY);
-    return state ? { ...emptyState(), ...state } : emptyState();
+    const raw = await redis.get(STATE_KEY);
+    return raw ? { ...emptyState(), ...(JSON.parse(raw) as GameState) } : emptyState();
   }
   return readFileState();
 }
@@ -57,7 +55,7 @@ export async function getState(): Promise<GameState> {
 export async function setState(state: GameState): Promise<void> {
   state.updatedAt = Date.now();
   if (redis) {
-    await redis.set(STATE_KEY, state);
+    await redis.set(STATE_KEY, JSON.stringify(state));
     return;
   }
   writeFileState(state);

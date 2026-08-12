@@ -27,8 +27,9 @@ pin specific admins via the `ADMIN_USERNAMES` env var (see below).
 - Next.js App Router + TypeScript
 - Tailwind CSS v4 + Framer Motion (drag-to-rank, reveal animations) + canvas-confetti
 - Cookie sessions via `iron-session`
-- Storage: Upstash Redis in production, a local `.data/state.json` file when no
-  Redis env vars are set (dev only — Vercel's filesystem is ephemeral/read-only)
+- Storage: Redis (via `ioredis` + `REDIS_URL`) in production, a local
+  `.data/state.json` file when `REDIS_URL` isn't set (dev only — Vercel's
+  filesystem is ephemeral/read-only)
 
 ## Local development
 
@@ -39,17 +40,16 @@ npm run dev
 
 Copy `.env.example` to `.env.local` and set `SESSION_SECRET` (a `.env.local`
 with a generated one is already included for local dev — don't reuse it in
-production). Without Redis env vars set, data persists to `.data/state.json`
+production). Without `REDIS_URL` set, data persists to `.data/state.json`
 on disk, which is gitignored.
 
 ## Deploying to Vercel
 
 1. Push this repo to GitHub and import it into Vercel (or run `vercel` from
    this directory).
-2. Add a Redis database: Vercel Dashboard → your project → **Storage** → add
-   an **Upstash Redis** database from the Marketplace, and connect it to this
-   project. That auto-populates `UPSTASH_REDIS_REST_URL` and
-   `UPSTASH_REDIS_REST_TOKEN` for you — without these, votes won't persist
+2. Add a Redis database: Vercel Dashboard → your project → **Storage** →
+   **Create Database** → **Redis**, and connect it to this project. That
+   auto-populates `REDIS_URL` for you — without it, votes won't persist
    between requests in production.
 3. Set `SESSION_SECRET` in Project Settings → Environment Variables to a
    random 32+ character string (e.g. `openssl rand -hex 32`).
