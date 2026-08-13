@@ -31,6 +31,13 @@ export async function POST(req: NextRequest) {
       return { error: "submissions are closed" as const };
     }
     const existingIdx = state.restaurants.findIndex((r) => r.submittedBy === username);
+    const normalized = parsed.data.name.trim().toLowerCase();
+    const dupe = state.restaurants.some(
+      (r, idx) => idx !== existingIdx && r.name.trim().toLowerCase() === normalized
+    );
+    if (dupe) {
+      return { error: "that place is already on the table — pick another" as const };
+    }
     const restaurant: Restaurant = {
       id: existingIdx >= 0 ? state.restaurants[existingIdx].id : nanoid(8),
       name: parsed.data.name,

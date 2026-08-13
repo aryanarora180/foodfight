@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { PublicState as State } from "@/lib/types";
+import type { PublicState as State, Restaurant } from "@/lib/types";
+import { EditRestaurantModal } from "./EditRestaurantModal";
 
 export function SubmissionPhase({
   state,
   username,
+  isAdmin,
   onChanged,
 }: {
   state: State;
   username: string;
+  isAdmin: boolean;
   onChanged: () => void;
 }) {
   const mine = state.restaurants.find((r) => r.submittedBy === username);
@@ -21,6 +24,7 @@ export function SubmissionPhase({
   const [loading, setLoading] = useState(false);
   const [passing, setPassing] = useState(false);
   const [overridePass, setOverridePass] = useState(false);
+  const [editing, setEditing] = useState<Restaurant | null>(null);
 
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
 
@@ -67,6 +71,14 @@ export function SubmissionPhase({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <EditRestaurantModal
+        restaurant={editing}
+        onSaved={() => {
+          setEditing(null);
+          onChanged();
+        }}
+        onCancel={() => setEditing(null)}
+      />
       <div className="felt-panel neon-border rounded-3xl p-6">
         {showPassedCard ? (
           <>
@@ -159,22 +171,31 @@ export function SubmissionPhase({
           <div className="grid gap-4 sm:grid-cols-2">
             <AnimatePresence>
               {state.restaurants.map((r) => (
-                <motion.a
+                <motion.div
                   key={r.id}
-                  href={r.url}
-                  target="_blank"
-                  rel="noreferrer"
                   initial={{ opacity: 0, rotateY: -90 }}
                   animate={{ opacity: 1, rotateY: 0 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.4 }}
-                  className="felt-panel block rounded-2xl p-4 transition hover:border-gold/50"
+                  className="felt-panel relative block rounded-2xl p-4 transition hover:border-gold/50"
                 >
-                  <p className="mb-1 text-2xl">🍽️</p>
-                  <p className="font-semibold">{r.name}</p>
-                  <p className="mt-1 text-xs text-white/40">picked by {r.submittedBy}</p>
-                  <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
-                </motion.a>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setEditing(r)}
+                      aria-label={`edit ${r.name}`}
+                      className="absolute right-3 top-3 text-white/40 hover:text-gold"
+                    >
+                      ✎
+                    </button>
+                  )}
+                  <a href={r.url} target="_blank" rel="noreferrer" className="block">
+                    <p className="mb-1 text-2xl">🍽️</p>
+                    <p className="font-semibold pr-5">{r.name}</p>
+                    <p className="mt-1 text-xs text-white/40">picked by {r.submittedBy}</p>
+                    <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
+                  </a>
+                </motion.div>
               ))}
             </AnimatePresence>
           </div>

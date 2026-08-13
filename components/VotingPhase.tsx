@@ -8,10 +8,12 @@ import { RankingEditor } from "./RankingEditor";
 export function VotingPhase({
   state,
   username,
+  isAdmin,
   onChanged,
 }: {
   state: PublicState;
   username: string;
+  isAdmin: boolean;
   onChanged: () => void;
 }) {
   const myVote = state.votes.find((v) => v.username === username);
@@ -94,24 +96,33 @@ export function VotingPhase({
       <div className="flex flex-col gap-6">
         <div>
           <h3 className="font-display mb-3 text-lg text-sky">Live odds 📊</h3>
-          <div className="flex flex-col gap-3">
-            {state.scores.map((s) => (
-              <div key={s.restaurant.id} className="felt-panel rounded-2xl p-4">
-                <div className="mb-2 flex items-baseline justify-between">
-                  <span className="font-semibold">{s.restaurant.name}</span>
-                  <span className="font-display text-gold">{s.points} pts</span>
+          {isAdmin ? (
+            <div className="flex flex-col gap-3">
+              {state.scores.map((s) => (
+                <div key={s.restaurant.id} className="felt-panel rounded-2xl p-4">
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <span className="font-semibold">{s.restaurant.name}</span>
+                    <span className="font-display text-gold">{s.points} pts</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-black/40">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(s.points / maxPoints) * 100}%` }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    />
+                  </div>
                 </div>
-                <div className="h-3 overflow-hidden rounded-full bg-black/40">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(s.points / maxPoints) * 100}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="felt-panel rounded-2xl p-6 text-center">
+              <p className="mb-2 text-3xl">🔒</p>
+              <p className="text-sm text-white/50">
+                the house keeps the odds close to the chest until the reveal.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -121,24 +132,12 @@ export function VotingPhase({
           <p className="mb-3 text-xs text-white/40">
             results drop automatically the moment everyone&apos;s voted.
           </p>
-          {state.votes.length === 0 ? (
-            <p className="text-white/40">no votes yet — everything&apos;s still up for grabs.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {state.votes.map((v) => (
-                <div key={v.username} className="felt-panel rounded-2xl p-4">
-                  <p className="mb-2 text-sm font-semibold text-gold/90">{v.username}</p>
-                  <ol className="space-y-1 text-sm text-white/60">
-                    {v.order.map((id, idx) => (
-                      <li key={id}>
-                        {["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`} {restaurantById.get(id)?.name}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="felt-panel rounded-2xl p-6 text-center">
+            <p className="mb-2 text-3xl">🔒</p>
+            <p className="text-sm text-white/50">
+              ballots stay sealed until the results drop — no peeking.
+            </p>
+          </div>
         </div>
       </div>
     </div>

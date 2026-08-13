@@ -35,7 +35,7 @@ export function GameShell({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <header className="bulb-border felt-panel neon-border mb-8 flex flex-wrap items-center justify-between gap-4 rounded-3xl px-5 py-4">
         <div className="flex items-center gap-3">
           <span className="text-3xl">🎰</span>
           <h1 className="font-display neon-text text-2xl sm:text-3xl">FOOD FIGHT</h1>
@@ -78,12 +78,22 @@ export function GameShell({
           transition={{ duration: 0.3 }}
         >
           {state.phase === "submission" && (
-            <SubmissionPhase state={state} username={username} onChanged={() => mutate()} />
+            <SubmissionPhase
+              state={state}
+              username={username}
+              isAdmin={isAdmin}
+              onChanged={() => mutate()}
+            />
           )}
           {state.phase === "voting" && (
-            <VotingPhase state={state} username={username} onChanged={() => mutate()} />
+            <VotingPhase
+              state={state}
+              username={username}
+              isAdmin={isAdmin}
+              onChanged={() => mutate()}
+            />
           )}
-          {state.phase === "results" && <ResultsPhase state={state} />}
+          {state.phase === "results" && <ResultsPhase state={state} isAdmin={isAdmin} />}
         </motion.div>
       </AnimatePresence>
     </div>

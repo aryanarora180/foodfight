@@ -1,18 +1,65 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import type { PublicState } from "@/lib/types";
 
-export function ResultsPhase({ state }: { state: PublicState }) {
-  const fired = useRef(false);
+const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
+
+export function ResultsPhase({
+  state,
+  isAdmin,
+}: {
+  state: PublicState;
+  isAdmin: boolean;
+}) {
+  const confettiFired = useRef(false);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
 
+  const canSpin = Boolean(state.winner) && !state.tie && state.restaurants.length > 1;
+  const [revealed, setRevealed] = useState(!canSpin);
+  const [spinName, setSpinName] = useState(state.restaurants[0]?.name ?? "");
+
   useEffect(() => {
-    if (fired.current) return;
-    fired.current = true;
+    if (!canSpin) {
+      setRevealed(true);
+      return;
+    }
+    setRevealed(false);
+    const pool = state.restaurants;
+    let elapsed = 0;
+    SPIN_STEP_DELAYS.forEach((delay, stepIdx) => {
+      elapsed += delay;
+      const isLast = stepIdx === SPIN_STEP_DELAYS.length - 1;
+      const t = setTimeout(() => {
+        if (isLast) {
+          setSpinName(state.winner!.restaurant.name);
+          setRevealed(true);
+        } else {
+          setSpinName(pool[stepIdx % pool.length].name);
+        }
+      }, elapsed);
+      timeoutsRef.current.push(t);
+    });
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function skipSpin() {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    setRevealed(true);
+  }
+
+  useEffect(() => {
+    if (!revealed || confettiFired.current) return;
+    confettiFired.current = true;
     const colors = ["#ffd23f", "#2f6fed", "#38bdf8", "#1e40af", "#34d399"];
     const duration = 1400;
     const end = Date.now() + duration;
@@ -21,7 +68,41 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       confetti({ particleCount: 4, angle: 120, spread: 70, origin: { x: 1 }, colors });
       if (Date.now() < end) requestAnimationFrame(frame);
     })();
-  }, []);
+  }, [revealed]);
+
+  if (!revealed) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-10 text-center">
+        <p className="font-display neon-text text-2xl sm:text-3xl">SPINNING THE REELS…</p>
+        <motion.div
+          animate={{ boxShadow: ["0 0 20px rgba(255,210,63,0.25)", "0 0 40px rgba(255,210,63,0.5)", "0 0 20px rgba(255,210,63,0.25)"] }}
+          transition={{ duration: 0.8, repeat: Infinity }}
+          className="bulb-border flex w-full max-w-sm items-center justify-center gap-3 rounded-3xl border-4 border-gold/60 bg-black/60 px-6 py-10"
+        >
+          <span className="text-4xl">🎰</span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={spinName}
+              initial={{ y: -16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 16, opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              className="font-display truncate text-xl text-gold sm:text-2xl"
+            >
+              {spinName}
+            </motion.span>
+          </AnimatePresence>
+        </motion.div>
+        <p className="animate-pulse text-sm text-white/40">the house is deciding…</p>
+        <button
+          onClick={skipSpin}
+          className="chip-btn-ghost rounded-full px-5 py-2 text-sm"
+        >
+          skip ⏭️
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,7 +114,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             <p className="mt-2 text-white/60">flip a coin, roll a die, or just hit both spots.</p>
           </>
         ) : state.winner ? (
-          <>
+          <div className="bulb-border felt-panel neon-border mx-auto inline-block rounded-3xl px-8 py-8 sm:px-14">
             <motion.p
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -57,7 +138,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             >
               VIEW THE MENU 🍽️
             </a>
-          </>
+          </div>
         ) : (
           <p className="text-white/50">no votes were cast.</p>
         )}
@@ -95,23 +176,32 @@ export function ResultsPhase({ state }: { state: PublicState }) {
         </div>
       </div>
 
-      <div>
-        <h3 className="font-display mb-3 text-lg text-sky">Everyone&apos;s ballots</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {state.votes.map((v) => (
-            <div key={v.username} className="felt-panel rounded-2xl p-4">
-              <p className="mb-2 text-sm font-semibold text-gold/90">{v.username}</p>
-              <ol className="space-y-1 text-sm text-white/60">
-                {v.order.map((id, idx) => (
-                  <li key={id}>
-                    {["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`} {restaurantById.get(id)?.name}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          ))}
+      {isAdmin ? (
+        <div className="felt-panel rounded-2xl p-6 text-center">
+          <p className="mb-2 text-3xl">🙈</p>
+          <p className="text-sm text-white/50">
+            ballots stay sealed for the house — the players get to see who picked what, not you.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div>
+          <h3 className="font-display mb-3 text-lg text-sky">Everyone&apos;s ballots</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {state.votes.map((v) => (
+              <div key={v.username} className="felt-panel rounded-2xl p-4">
+                <p className="mb-2 text-sm font-semibold text-gold/90">{v.username}</p>
+                <ol className="space-y-1 text-sm text-white/60">
+                  {v.order.map((id, idx) => (
+                    <li key={id}>
+                      {["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`} {restaurantById.get(id)?.name}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
