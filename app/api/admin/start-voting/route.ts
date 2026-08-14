@@ -1,12 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { updateState } from "@/lib/store";
 import { toPublicState, MIN_RESTAURANTS_TO_VOTE } from "@/lib/gameLogic";
 
-export async function POST() {
+const schema = z.object({
+  votingType: z.enum(["simple", "points", "ranked"]),
+});
+
+export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session.username || !session.isAdmin) {
     return NextResponse.json({ error: "admins only" }, { status: 403 });
+  }
+  const body = await req.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "pick a voting format" }, { status: 400 });
   }
   const { state, result } = await updateState((state) => {
     if (state.phase !== "submission") {
@@ -19,6 +29,7 @@ export async function POST() {
     }
     state.phase = "voting";
     state.votes = {};
+    state.votingType = parsed.data.votingType;
     return { ok: true as const };
   });
   if ("error" in result) {

@@ -14,6 +14,12 @@ const PHASE_LABEL: Record<string, string> = {
   results: "🏆 results are set",
 };
 
+const VOTING_TYPE_BADGE: Record<string, string> = {
+  simple: "🗳️ simple",
+  points: "📊 points",
+  ranked: "🏆 ranked choice",
+};
+
 export function GameShell({
   username,
   isAdmin,
@@ -44,6 +50,11 @@ export function GameShell({
           <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-sky/90">
             {PHASE_LABEL[state.phase]}
           </span>
+          {state.phase !== "submission" && (
+            <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs text-white/50">
+              {VOTING_TYPE_BADGE[state.votingType]}
+            </span>
+          )}
           <span className="rounded-full bg-white/5 px-3 py-1.5 text-sm">
             {isAdmin && "👑 "}
             {username}

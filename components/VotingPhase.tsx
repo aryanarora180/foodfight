@@ -4,6 +4,23 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { PublicState } from "@/lib/types";
 import { RankingEditor } from "./RankingEditor";
+import { SimpleVoteEditor } from "./SimpleVoteEditor";
+
+const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: string }> = {
+  simple: {
+    title: "Cast your vote",
+    blurb: "tap your one favorite — most votes wins.",
+  },
+  points: {
+    title: "Shore up your rankings",
+    blurb: "drag to reorder — top is your favorite. 1st place scores highest, points decide it.",
+  },
+  ranked: {
+    title: "Shore up your rankings",
+    blurb:
+      "drag to reorder — top is your favorite. if nobody has a majority, the lowest pick gets eliminated and votes shift down.",
+  },
+};
 
 export function VotingPhase({
   state,
@@ -23,6 +40,8 @@ export function VotingPhase({
 
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
+  const unit = state.votingType === "points" ? "pts" : "votes";
+  const copy = HEADER_COPY[state.votingType];
 
   async function submitVote(order: string[]) {
     setError(null);
@@ -50,22 +69,29 @@ export function VotingPhase({
   return (
     <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
       <div className="felt-panel neon-border rounded-3xl p-6">
-        <h2 className="font-display mb-1 text-xl text-gold">Shore up your rankings</h2>
-        <p className="mb-5 text-sm text-white/50">
-          drag to reorder — top is your favorite. 1st = {state.restaurants.length} pts, down to 1.
-        </p>
+        <h2 className="font-display mb-1 text-xl text-gold">{copy.title}</h2>
+        <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
         )}
 
         {editing ? (
-          <RankingEditor
-            restaurants={state.restaurants}
-            initialOrder={myVote?.order ?? state.restaurants.map((r) => r.id)}
-            onSubmit={submitVote}
-            submitting={submitting}
-          />
+          state.votingType === "simple" ? (
+            <SimpleVoteEditor
+              restaurants={state.restaurants}
+              initialPick={myVote?.order[0] ?? null}
+              onSubmit={(id) => submitVote([id])}
+              submitting={submitting}
+            />
+          ) : (
+            <RankingEditor
+              restaurants={state.restaurants}
+              initialOrder={myVote?.order ?? state.restaurants.map((r) => r.id)}
+              onSubmit={submitVote}
+              submitting={submitting}
+            />
+          )
         ) : (
           <div>
             <div className="flex flex-col gap-2">
@@ -102,7 +128,9 @@ export function VotingPhase({
                 <div key={s.restaurant.id} className="felt-panel rounded-2xl p-4">
                   <div className="mb-2 flex items-baseline justify-between">
                     <span className="font-semibold">{s.restaurant.name}</span>
-                    <span className="font-display text-gold">{s.points} pts</span>
+                    <span className="font-display text-gold">
+                      {s.points} {unit}
+                    </span>
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-black/40">
                     <motion.div

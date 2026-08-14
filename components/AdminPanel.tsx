@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { PublicState } from "@/lib/types";
+import type { PublicState, VotingType } from "@/lib/types";
 import { ConfirmModal } from "./ConfirmModal";
+import { StartVotingModal } from "./StartVotingModal";
 
 export function AdminPanel({
   state,
@@ -14,6 +15,7 @@ export function AdminPanel({
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(false);
 
   async function call(path: string, key: string) {
     setError(null);
@@ -38,6 +40,29 @@ export function AdminPanel({
     call("/api/admin/reset", "reset");
   }
 
+  async function confirmStartVoting(votingType: VotingType) {
+    setError(null);
+    setLoading("start");
+    try {
+      const res = await fetch("/api/admin/start-voting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ votingType }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "something went wrong");
+        return;
+      }
+      setShowStartModal(false);
+      onChanged();
+    } catch {
+      setError("network error");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <div className="bulb-border felt-panel neon-border rounded-3xl p-5">
       <ConfirmModal
@@ -48,6 +73,12 @@ export function AdminPanel({
         onConfirm={confirmReset}
         onCancel={() => setConfirmingReset(false)}
       />
+      <StartVotingModal
+        open={showStartModal}
+        onConfirm={confirmStartVoting}
+        onCancel={() => setShowStartModal(false)}
+        loading={loading === "start"}
+      />
       <p className="font-display mb-3 text-sm tracking-wide text-royal">👑 ADMIN CONTROLS</p>
       {error && (
         <p className="mb-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
@@ -55,11 +86,11 @@ export function AdminPanel({
       <div className="flex flex-wrap items-center gap-3">
         {state.phase === "submission" && (
           <button
-            onClick={() => call("/api/admin/start-voting", "start")}
+            onClick={() => setShowStartModal(true)}
             disabled={loading !== null || state.restaurants.length < 2}
             className="chip-btn px-5 py-2.5 text-sm"
           >
-            {loading === "start" ? "BREAKING GROUND…" : "BREAK GROUND 🧱"}
+            BREAK GROUND 🧱
           </button>
         )}
         {state.phase === "voting" && (

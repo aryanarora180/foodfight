@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { PublicState as State, Restaurant } from "@/lib/types";
+import type { HistoryEntry, PublicState as State, Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
+import { RestaurantVault } from "./RestaurantVault";
 
 export function SubmissionPhase({
   state,
@@ -49,6 +50,13 @@ export function SubmissionPhase({
     } finally {
       setLoading(false);
     }
+  }
+
+  function pickFromVault(entry: HistoryEntry) {
+    setName(entry.name);
+    setUrl(entry.url);
+    setOverridePass(true);
+    setError(null);
   }
 
   async function pass() {
@@ -200,6 +208,18 @@ export function SubmissionPhase({
             </AnimatePresence>
           </div>
         )}
+      </div>
+
+      <div className="lg:col-span-2">
+        <RestaurantVault
+          history={state.history}
+          isAdmin={isAdmin}
+          currentNames={
+            new Set(state.restaurants.map((r) => r.name.trim().toLowerCase()))
+          }
+          onPick={pickFromVault}
+          onChanged={onChanged}
+        />
       </div>
     </div>
   );

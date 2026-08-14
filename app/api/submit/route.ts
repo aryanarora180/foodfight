@@ -51,6 +51,20 @@ export async function POST(req: NextRequest) {
       state.restaurants.push(restaurant);
     }
     delete state.passes[username];
+
+    const historyKey = username.toLowerCase();
+    const historyDupe = Object.entries(state.restaurantHistory).some(
+      ([key, h]) => key !== historyKey && h.name.trim().toLowerCase() === normalized
+    );
+    if (!historyDupe) {
+      state.restaurantHistory[historyKey] = {
+        username,
+        name: parsed.data.name,
+        url: parsed.data.url,
+        updatedAt: Date.now(),
+      };
+    }
+
     return { ok: true as const };
   });
 

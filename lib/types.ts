@@ -1,4 +1,5 @@
 export type Phase = "submission" | "voting" | "results";
+export type VotingType = "simple" | "points" | "ranked";
 
 export interface Restaurant {
   id: string;
@@ -14,6 +15,13 @@ export interface UserRecord {
   createdAt: number;
 }
 
+export interface HistoryEntry {
+  username: string;
+  name: string;
+  url: string;
+  updatedAt: number;
+}
+
 export interface VoteRecord {
   username: string;
   order: string[];
@@ -22,10 +30,12 @@ export interface VoteRecord {
 
 export interface GameState {
   phase: Phase;
+  votingType: VotingType;
   restaurants: Restaurant[];
   votes: Record<string, VoteRecord>;
   users: Record<string, UserRecord>;
   passes: Record<string, boolean>;
+  restaurantHistory: Record<string, HistoryEntry>;
   updatedAt: number;
 }
 
@@ -45,11 +55,13 @@ export interface ScoreEntry {
 
 export interface PublicState {
   phase: Phase;
+  votingType: VotingType;
   restaurants: Restaurant[];
   votes: VoteRecord[];
   scores: ScoreEntry[];
   winner: ScoreEntry | null;
   tie: boolean;
   users: PublicUser[];
+  history: HistoryEntry[];
   updatedAt: number;
 }

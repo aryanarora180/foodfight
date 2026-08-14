@@ -28,11 +28,18 @@ export async function POST(req: NextRequest) {
     const order = parsed.data.order;
     const orderSet = new Set(order);
     const valid =
-      order.length === state.restaurants.length &&
-      orderSet.size === order.length &&
-      order.every((id) => restaurantIds.has(id));
+      state.votingType === "simple"
+        ? order.length === 1 && restaurantIds.has(order[0])
+        : order.length === state.restaurants.length &&
+          orderSet.size === order.length &&
+          order.every((id) => restaurantIds.has(id));
     if (!valid) {
-      return { error: "ranking must include every restaurant exactly once" as const };
+      return {
+        error:
+          state.votingType === "simple"
+            ? ("pick exactly one restaurant" as const)
+            : ("ranking must include every restaurant exactly once" as const),
+      };
     }
     state.votes[username] = { username, order, votedAt: Date.now() };
     const everyoneVoted = Object.values(state.users).every((u) => Boolean(state.votes[u.username]));

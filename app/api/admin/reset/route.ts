@@ -10,6 +10,7 @@ export async function POST() {
   }
   const { state } = await updateState((state) => {
     state.phase = "submission";
+    state.votingType = "points";
     state.restaurants = [];
     state.votes = {};
     state.passes = {};

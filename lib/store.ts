@@ -8,10 +8,12 @@ const STATE_KEY = "foodfight:state";
 function emptyState(): GameState {
   return {
     phase: "submission",
+    votingType: "points",
     restaurants: [],
     votes: {},
     users: {},
     passes: {},
+    restaurantHistory: {},
     updatedAt: Date.now(),
   };
 }

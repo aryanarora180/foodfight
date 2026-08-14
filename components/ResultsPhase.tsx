@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import type { PublicState } from "@/lib/types";
+import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
 
 const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
 
@@ -18,6 +19,7 @@ export function ResultsPhase({
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
+  const unit = state.votingType === "points" ? "pts" : "votes";
 
   const canSpin = Boolean(state.winner) && !state.tie && state.restaurants.length > 1;
   const [revealed, setRevealed] = useState(!canSpin);
@@ -127,8 +129,12 @@ export function ResultsPhase({
               {state.winner.restaurant.name}
             </h2>
             <p className="mt-2 text-white/60">
-              wins with {state.winner.points} points ({state.winner.firstPlaceVotes} first-place
-              vote{state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.
+              {state.votingType === "simple" &&
+                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"} — solid as bedrock.`}
+              {state.votingType === "points" &&
+                `wins with ${state.winner.points} points (${state.winner.firstPlaceVotes} first-place vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.`}
+              {state.votingType === "ranked" &&
+                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"} in the final round (${state.winner.firstPlaceVotes} first-choice vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.`}
             </p>
             <a
               href={state.winner.restaurant.url}
@@ -145,7 +151,8 @@ export function ResultsPhase({
       </div>
 
       <div>
-        <h3 className="font-display mb-3 text-lg text-sky">Final tally</h3>
+        <h3 className="font-display mb-1 text-lg text-sky">Final tally</h3>
+        <p className="mb-3 text-xs text-white/40">via {VOTING_TYPE_LABEL[state.votingType]}</p>
         <div className="flex flex-col gap-3">
           {state.scores.map((s, idx) => (
             <motion.div
@@ -160,7 +167,9 @@ export function ResultsPhase({
                   {idx === 0 && !state.tie ? "👑 " : `#${idx + 1} `}
                   {s.restaurant.name}
                 </span>
-                <span className="font-display text-gold">{s.points} pts</span>
+                <span className="font-display text-gold">
+                  {s.points} {unit}
+                </span>
               </div>
               <div className="h-4 overflow-hidden rounded-full bg-black/40">
                 <motion.div
