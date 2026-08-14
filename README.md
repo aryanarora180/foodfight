@@ -6,9 +6,12 @@ down to 1), and the admin pulls the trigger to reveal a winner — confetti incl
 
 ## How it works
 
-1. **Log in** — enter any username, no password. It's honor-system: first time
-   you use a username it creates your seat automatically, and typing an
-   existing username just logs you back in as that person.
+1. **Log in** — accounts are admin-created. An admin makes your account and
+   hands you a temp password; your first login forces you to swap it for a
+   real one. The only exception is the very first admin, who bootstraps their
+   own account by picking a password on their first-ever login (either the
+   username listed in `ADMIN_USERNAMES`, or whoever gets there first if that's
+   unset).
 2. **Submission phase** — everyone throws in one restaurant + a menu link. All
    picks are public as they come in.
 3. **Voting phase** — the admin starts voting once there are at least 2 picks.

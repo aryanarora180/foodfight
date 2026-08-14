@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { PublicState, VotingType } from "@/lib/types";
 import { ConfirmModal } from "./ConfirmModal";
 import { StartVotingModal } from "./StartVotingModal";
+import { CreateUserModal } from "./CreateUserModal";
+import { TempPasswordModal } from "./TempPasswordModal";
 
 export function AdminPanel({
   state,
@@ -16,6 +18,11 @@ export function AdminPanel({
   const [error, setError] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [tempPasswordResult, setTempPasswordResult] = useState<{
+    username: string;
+    tempPassword: string;
+  } | null>(null);
 
   async function call(path: string, key: string) {
     setError(null);
@@ -79,6 +86,16 @@ export function AdminPanel({
         onCancel={() => setShowStartModal(false)}
         loading={loading === "start"}
       />
+      <CreateUserModal
+        open={showCreateUser}
+        onClose={() => setShowCreateUser(false)}
+        onCreated={(result) => {
+          setShowCreateUser(false);
+          setTempPasswordResult(result);
+          onChanged();
+        }}
+      />
+      <TempPasswordModal result={tempPasswordResult} onClose={() => setTempPasswordResult(null)} />
       <p className="font-display mb-3 text-sm tracking-wide text-royal">👑 ADMIN CONTROLS</p>
       {error && (
         <p className="mb-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
@@ -108,6 +125,13 @@ export function AdminPanel({
           className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
         >
           {loading === "reset" ? "RESETTING…" : "BACK TO BEDROCK 🪨"}
+        </button>
+        <button
+          onClick={() => setShowCreateUser(true)}
+          disabled={loading !== null}
+          className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
+        >
+          + create account
         </button>
         {state.phase === "submission" && state.restaurants.length < 2 && (
           <p className="text-xs text-white/40">need at least 2 picks before we can break ground.</p>

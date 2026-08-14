@@ -2,6 +2,7 @@
 
 import { useSession } from "@/lib/hooks";
 import { LoginScreen } from "@/components/LoginScreen";
+import { ChangePasswordScreen } from "@/components/ChangePasswordScreen";
 import { GameShell } from "@/components/GameShell";
 
 export default function Home() {
@@ -22,6 +23,16 @@ export default function Home() {
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     mutate();
+  }
+
+  if (user.mustChangePassword) {
+    return (
+      <ChangePasswordScreen
+        username={user.username}
+        onChanged={() => mutate()}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return <GameShell username={user.username} isAdmin={user.isAdmin} onLogout={handleLogout} />;

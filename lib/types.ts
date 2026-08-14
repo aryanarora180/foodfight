@@ -13,6 +13,8 @@ export interface UserRecord {
   username: string;
   isAdmin: boolean;
   createdAt: number;
+  passwordHash?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface HistoryEntry {

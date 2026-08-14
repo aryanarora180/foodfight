@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-import { getState } from "@/lib/store";
+import { getActiveSession } from "@/lib/authGuard";
 import { toPublicState } from "@/lib/gameLogic";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session.username) {
+  const { record, state } = await getActiveSession();
+  if (!record) {
     return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
-  const state = await getState();
   return NextResponse.json({ state: toPublicState(state) });
 }

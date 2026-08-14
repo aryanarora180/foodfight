@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Phase, PublicUser } from "@/lib/types";
 import { ConfirmModal } from "./ConfirmModal";
+import { TempPasswordModal } from "./TempPasswordModal";
 
 export function RosterTicker({
   users,
@@ -19,6 +20,10 @@ export function RosterTicker({
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [confirmingKickAll, setConfirmingKickAll] = useState(false);
   const [kickingAll, setKickingAll] = useState(false);
+  const [resettingPw, setResettingPw] = useState<string | null>(null);
+  const [pwResult, setPwResult] = useState<{ username: string; tempPassword: string } | null>(
+    null
+  );
 
   if (users.length === 0) return null;
   const label = phase === "submission" ? "locked in a pick" : "voted";
@@ -55,6 +60,23 @@ export function RosterTicker({
     }
   }
 
+  async function resetPassword(username: string) {
+    setResettingPw(username);
+    try {
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwResult({ username: data.username, tempPassword: data.tempPassword });
+      }
+    } finally {
+      setResettingPw(null);
+    }
+  }
+
   return (
     <div className="felt-panel rounded-2xl px-4 py-3">
       <ConfirmModal
@@ -73,6 +95,7 @@ export function RosterTicker({
         onConfirm={confirmKickAll}
         onCancel={() => setConfirmingKickAll(false)}
       />
+      <TempPasswordModal result={pwResult} onClose={() => setPwResult(null)} />
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold tracking-wide text-sky/80">
           WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{users.length})
@@ -109,6 +132,18 @@ export function RosterTicker({
               {u.isAdmin && "👑"}
               {u.username}
               {passed ? " 🤷" : done ? " ✓" : " …"}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => resetPassword(u.username)}
+                  disabled={resettingPw === u.username}
+                  aria-label={`reset ${u.username}'s password`}
+                  title={`reset ${u.username}'s password`}
+                  className="ml-1 leading-none text-white/40 hover:text-gold disabled:opacity-40"
+                >
+                  🔑
+                </button>
+              )}
               {isAdmin && !u.isAdmin && (
                 <button
                   type="button"

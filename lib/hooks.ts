@@ -7,6 +7,7 @@ import type { PublicState } from "./types";
 export interface SessionUser {
   username: string;
   isAdmin: boolean;
+  mustChangePassword: boolean;
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -37,6 +38,9 @@ export function useSession() {
     "/api/auth/me",
     fetcher
   );
+  // polled so a kicked user's screen notices their session died and drops
+  // them back to the login screen without needing a manual refresh.
+  useClockAlignedPoll(Boolean(data?.user), () => mutate());
   return { user: data?.user ?? null, isLoading, mutate };
 }
 

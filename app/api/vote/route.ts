@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
 
   const username = session.username;
   const { state, result } = await updateState((state) => {
+    if (!state.users[username.toLowerCase()]) {
+      return { error: "you've been removed from this round" as const };
+    }
     if (state.phase !== "voting") {
       return { error: "voting is not open" as const };
     }
@@ -50,6 +53,10 @@ export async function POST(req: NextRequest) {
   });
 
   if ("error" in result) {
+    if (result.error === "you've been removed from this round") {
+      await session.destroy();
+      return NextResponse.json({ error: result.error }, { status: 401 });
+    }
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
