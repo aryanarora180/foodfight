@@ -26,7 +26,7 @@ export function SimpleVoteEditor({
             onClick={() => setSelected(r.id)}
             className={`felt-panel rounded-2xl border px-4 py-3 text-left transition ${
               selected === r.id
-                ? "border-gold/70 bg-gold/10"
+                ? "!border-gold/70 !bg-gold/10"
                 : "border-white/10 hover:border-gold/40"
             }`}
           >

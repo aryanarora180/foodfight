@@ -104,7 +104,7 @@ export function GameShell({
               onChanged={() => mutate()}
             />
           )}
-          {state.phase === "results" && <ResultsPhase state={state} isAdmin={isAdmin} />}
+          {state.phase === "results" && <ResultsPhase state={state} />}
         </motion.div>
       </AnimatePresence>
     </div>

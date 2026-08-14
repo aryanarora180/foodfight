@@ -8,13 +8,7 @@ import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
 
 const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
 
-export function ResultsPhase({
-  state,
-  isAdmin,
-}: {
-  state: PublicState;
-  isAdmin: boolean;
-}) {
+export function ResultsPhase({ state }: { state: PublicState }) {
   const confettiFired = useRef(false);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
@@ -185,32 +179,23 @@ export function ResultsPhase({
         </div>
       </div>
 
-      {isAdmin ? (
-        <div className="felt-panel rounded-2xl p-6 text-center">
-          <p className="mb-2 text-3xl">🙈</p>
-          <p className="text-sm text-white/50">
-            ballots stay sealed for the house — the players get to see who picked what, not you.
-          </p>
+      <div>
+        <h3 className="font-display mb-3 text-lg text-sky">Everyone&apos;s ballots</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {state.votes.map((v) => (
+            <div key={v.username} className="felt-panel rounded-2xl p-4">
+              <p className="mb-2 text-sm font-semibold text-gold/90">{v.username}</p>
+              <ol className="space-y-1 text-sm text-white/60">
+                {v.order.map((id, idx) => (
+                  <li key={id}>
+                    {["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`} {restaurantById.get(id)?.name}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div>
-          <h3 className="font-display mb-3 text-lg text-sky">Everyone&apos;s ballots</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {state.votes.map((v) => (
-              <div key={v.username} className="felt-panel rounded-2xl p-4">
-                <p className="mb-2 text-sm font-semibold text-gold/90">{v.username}</p>
-                <ol className="space-y-1 text-sm text-white/60">
-                  {v.order.map((id, idx) => (
-                    <li key={id}>
-                      {["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`} {restaurantById.get(id)?.name}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
