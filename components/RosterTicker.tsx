@@ -9,11 +9,13 @@ export function RosterTicker({
   users,
   phase,
   isAdmin,
+  username,
   onChanged,
 }: {
   users: PublicUser[];
   phase: Phase;
   isAdmin: boolean;
+  username: string;
   onChanged: () => void;
 }) {
   const [removing, setRemoving] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export function RosterTicker({
   const [confirmingKickAll, setConfirmingKickAll] = useState(false);
   const [kickingAll, setKickingAll] = useState(false);
   const [resettingPw, setResettingPw] = useState<string | null>(null);
+  const [pendingResetPw, setPendingResetPw] = useState<string | null>(null);
   const [pwResult, setPwResult] = useState<{ username: string; tempPassword: string } | null>(
     null
   );
@@ -33,15 +36,15 @@ export function RosterTicker({
   const nonAdminCount = users.filter((u) => !u.isAdmin).length;
 
   async function confirmRemove() {
-    const username = pendingRemove;
+    const target = pendingRemove;
     setPendingRemove(null);
-    if (!username) return;
-    setRemoving(username);
+    if (!target) return;
+    setRemoving(target);
     try {
       await fetch("/api/admin/remove-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: target }),
       });
       onChanged();
     } finally {
@@ -60,13 +63,16 @@ export function RosterTicker({
     }
   }
 
-  async function resetPassword(username: string) {
-    setResettingPw(username);
+  async function confirmResetPassword() {
+    const target = pendingResetPw;
+    setPendingResetPw(null);
+    if (!target) return;
+    setResettingPw(target);
     try {
       const res = await fetch("/api/admin/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: target }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -95,6 +101,14 @@ export function RosterTicker({
         onConfirm={confirmKickAll}
         onCancel={() => setConfirmingKickAll(false)}
       />
+      <ConfirmModal
+        open={pendingResetPw !== null}
+        title="reset their password?"
+        message={`${pendingResetPw} gets a fresh temp password and has to set a new one on their next login.`}
+        confirmLabel="reset it"
+        onConfirm={confirmResetPassword}
+        onCancel={() => setPendingResetPw(null)}
+      />
       <TempPasswordModal result={pwResult} onClose={() => setPwResult(null)} />
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold tracking-wide text-sky/80">
@@ -115,6 +129,7 @@ export function RosterTicker({
         {users.map((u) => {
           const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
           const passed = phase === "submission" && u.passedSubmission;
+          const isSelf = u.username.toLowerCase() === username.toLowerCase();
           return (
             <span
               key={u.username}
@@ -135,7 +150,7 @@ export function RosterTicker({
               {isAdmin && (
                 <button
                   type="button"
-                  onClick={() => resetPassword(u.username)}
+                  onClick={() => setPendingResetPw(u.username)}
                   disabled={resettingPw === u.username}
                   aria-label={`reset ${u.username}'s password`}
                   title={`reset ${u.username}'s password`}
@@ -144,7 +159,7 @@ export function RosterTicker({
                   🔑
                 </button>
               )}
-              {isAdmin && !u.isAdmin && (
+              {isAdmin && !isSelf && (
                 <button
                   type="button"
                   onClick={() => setPendingRemove(u.username)}

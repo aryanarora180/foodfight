@@ -70,6 +70,7 @@ export function GameShell({
           users={state.users}
           phase={state.phase}
           isAdmin={isAdmin}
+          username={username}
           onChanged={() => mutate()}
         />
       </div>
