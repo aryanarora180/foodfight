@@ -15,7 +15,7 @@ const baloo = Baloo_2({
 
 export const metadata: Metadata = {
   title: "Food Fight 🎰",
-  description: "lay the foundation, rank the field, let the machine crown a winner.",
+  description: "pick a restaurant, rank the options, and let the app decide the winner.",
 };
 
 export default function RootLayout({

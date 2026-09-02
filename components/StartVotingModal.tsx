@@ -57,7 +57,7 @@ export function StartVotingModal({
             className="felt-panel neon-border w-full max-w-md rounded-3xl p-6"
           >
             <p className="font-display mb-1 text-lg text-gold">how are we voting?</p>
-            <p className="mb-4 text-xs text-white/40">pick a format before breaking ground.</p>
+            <p className="mb-4 text-xs text-white/40">pick a format before voting starts.</p>
             <div className="mb-5 flex flex-col gap-2">
               {OPTIONS.map((opt) => (
                 <button
@@ -91,7 +91,7 @@ export function StartVotingModal({
                 disabled={loading}
                 className="chip-btn rounded-full px-5 py-2 text-sm disabled:opacity-40"
               >
-                {loading ? "breaking ground…" : "BREAK GROUND 🧱"}
+                {loading ? "starting…" : "START VOTING 🗳️"}
               </button>
             </div>
           </motion.div>

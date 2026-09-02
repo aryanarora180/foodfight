@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
     if (state.restaurants.length < MIN_RESTAURANTS_TO_VOTE) {
       return {
-        error: `need at least ${MIN_RESTAURANTS_TO_VOTE} restaurants before we can break ground` as const,
+        error: `need at least ${MIN_RESTAURANTS_TO_VOTE} restaurants before voting can start` as const,
       };
     }
     state.phase = "voting";

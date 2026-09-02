@@ -12,11 +12,11 @@ const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: str
     blurb: "tap your one favorite — most votes wins.",
   },
   points: {
-    title: "Shore up your rankings",
+    title: "Rank your choices",
     blurb: "drag to reorder — top is your favorite. 1st place scores highest, points decide it.",
   },
   ranked: {
-    title: "Shore up your rankings",
+    title: "Rank your choices",
     blurb:
       "drag to reorder — top is your favorite. if nobody has a majority, the lowest pick gets eliminated and votes shift down.",
   },

@@ -124,11 +124,11 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             </h2>
             <p className="mt-2 text-white/60">
               {state.votingType === "simple" &&
-                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"} — solid as bedrock.`}
+                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"}.`}
               {state.votingType === "points" &&
-                `wins with ${state.winner.points} points (${state.winner.firstPlaceVotes} first-place vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.`}
+                `wins with ${state.winner.points} points (${state.winner.firstPlaceVotes} first-place vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}).`}
               {state.votingType === "ranked" &&
-                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"} in the final round (${state.winner.firstPlaceVotes} first-choice vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}) — solid as bedrock.`}
+                `wins with ${state.winner.points} vote${state.winner.points === 1 ? "" : "s"} in the final round (${state.winner.firstPlaceVotes} first-choice vote${state.winner.firstPlaceVotes === 1 ? "" : "s"}).`}
             </p>
             <a
               href={state.winner.restaurant.url}

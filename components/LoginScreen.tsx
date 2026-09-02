@@ -65,7 +65,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             FIGHT
           </h1>
           <p className="mt-3 font-display text-xs tracking-[0.3em] text-sky/80 sm:text-sm">
-            PICK · RANK · LAY THE FOUNDATION
+            PICK · RANK · WIN
           </p>
         </div>
 

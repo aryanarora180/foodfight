@@ -108,10 +108,10 @@ export function SubmissionPhase({
         ) : (
           <>
             <h2 className="font-display mb-1 text-xl text-gold">
-              {mine ? "Reinforce your pick" : "Lay your foundation"}
+              {mine ? "Update your pick" : "Submit a restaurant"}
             </h2>
             <p className="mb-5 text-sm text-white/50">
-              one pick per person — reinforce it anytime before voting breaks ground.
+              one pick per person — you can change it anytime before voting starts.
             </p>
             <form onSubmit={submit}>
               <label className="mb-1 block text-sm font-semibold text-gold/90">
@@ -149,7 +149,7 @@ export function SubmissionPhase({
                 whileTap={{ scale: 0.96 }}
                 className="chip-btn w-full py-3 font-display text-lg"
               >
-                {loading ? "LOCKING IN…" : mine ? "REINFORCE MY PICK 🧱" : "LOCK IN MY PICK 🧱"}
+                {loading ? "SAVING…" : mine ? "UPDATE MY PICK" : "SUBMIT MY PICK"}
               </motion.button>
             </form>
             {!mine && (
@@ -171,7 +171,7 @@ export function SubmissionPhase({
 
       <div>
         <h3 className="font-display mb-3 text-lg text-sky">
-          On solid ground ({state.restaurants.length})
+          Submitted so far ({state.restaurants.length})
         </h3>
         {state.restaurants.length === 0 ? (
           <p className="text-white/40">nobody&apos;s dropped a pick yet — be the first.</p>

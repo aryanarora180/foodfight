@@ -74,7 +74,7 @@ export function AdminPanel({
     <div className="bulb-border felt-panel neon-border rounded-3xl p-5">
       <ConfirmModal
         open={confirmingReset}
-        title="reset back to bedrock?"
+        title="reset everything?"
         message="this clears all picks and votes. accounts stay put."
         confirmLabel="reset it"
         onConfirm={confirmReset}
@@ -107,7 +107,7 @@ export function AdminPanel({
             disabled={loading !== null || state.restaurants.length < 2}
             className="chip-btn px-5 py-2.5 text-sm"
           >
-            BREAK GROUND 🧱
+            START VOTING 🗳️
           </button>
         )}
         {state.phase === "voting" && (
@@ -116,7 +116,7 @@ export function AdminPanel({
             disabled={loading !== null}
             className="chip-btn px-5 py-2.5 text-sm"
           >
-            {loading === "reveal" ? "SETTING…" : "SET IT IN STONE 🪨"}
+            {loading === "reveal" ? "REVEALING…" : "REVEAL RESULTS 🏆"}
           </button>
         )}
         <button
@@ -124,7 +124,7 @@ export function AdminPanel({
           disabled={loading !== null}
           className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
         >
-          {loading === "reset" ? "RESETTING…" : "BACK TO BEDROCK 🪨"}
+          {loading === "reset" ? "RESETTING…" : "RESET EVERYTHING"}
         </button>
         <button
           onClick={() => setShowCreateUser(true)}
@@ -134,7 +134,7 @@ export function AdminPanel({
           + create account
         </button>
         {state.phase === "submission" && state.restaurants.length < 2 && (
-          <p className="text-xs text-white/40">need at least 2 picks before we can break ground.</p>
+          <p className="text-xs text-white/40">need at least 2 picks before voting can start.</p>
         )}
         {state.phase === "voting" && (
           <p className="text-xs text-white/40">

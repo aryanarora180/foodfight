@@ -9,7 +9,7 @@ import { AdminPanel } from "./AdminPanel";
 import { RosterTicker } from "./RosterTicker";
 
 const PHASE_LABEL: Record<string, string> = {
-  submission: "🧱 foundations open",
+  submission: "📝 submissions open",
   voting: "🗳️ voting live",
   results: "🏆 results are set",
 };
