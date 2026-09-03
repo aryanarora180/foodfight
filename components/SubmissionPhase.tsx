@@ -29,6 +29,7 @@ export function SubmissionPhase({
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [removingMine, setRemovingMine] = useState(false);
 
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
 
@@ -76,6 +77,26 @@ export function SubmissionPhase({
       onChanged();
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function removeMyPick() {
+    setError(null);
+    setRemovingMine(true);
+    try {
+      const res = await fetch("/api/remove-pick", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "something went wrong");
+        return;
+      }
+      setName("");
+      setUrl("");
+      onChanged();
+    } catch {
+      setError("network error — try again");
+    } finally {
+      setRemovingMine(false);
     }
   }
 
@@ -188,6 +209,16 @@ export function SubmissionPhase({
                 className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm disabled:opacity-40"
               >
                 {passing ? "…" : "skip — no pick from me 🤷"}
+              </button>
+            )}
+            {mine && (
+              <button
+                type="button"
+                onClick={removeMyPick}
+                disabled={removingMine}
+                className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
+              >
+                {removingMine ? "removing…" : "remove my pick"}
               </button>
             )}
             <p className="mt-2 text-center text-xs text-white/30">
