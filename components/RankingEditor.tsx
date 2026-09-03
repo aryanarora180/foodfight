@@ -53,7 +53,19 @@ export function RankingEditor({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{r.name}</p>
-                <p className="truncate text-xs text-white/40">picked by {r.submittedBy}</p>
+                <div className="flex items-center gap-2 text-xs text-white/40">
+                  <span className="truncate">picked by {r.submittedBy}</span>
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 text-sky/70 underline hover:text-sky"
+                  >
+                    view menu →
+                  </a>
+                </div>
               </div>
               <div className="flex shrink-0 flex-col gap-1">
                 <button

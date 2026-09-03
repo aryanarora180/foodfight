@@ -120,13 +120,6 @@ export function AdminPanel({
           </button>
         )}
         <button
-          onClick={() => setConfirmingReset(true)}
-          disabled={loading !== null}
-          className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
-        >
-          {loading === "reset" ? "RESETTING…" : "RESET EVERYTHING"}
-        </button>
-        <button
           onClick={() => setShowCreateUser(true)}
           disabled={loading !== null}
           className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
@@ -141,6 +134,13 @@ export function AdminPanel({
             results drop on their own once everyone&apos;s voted — this forces it early.
           </p>
         )}
+        <button
+          onClick={() => setConfirmingReset(true)}
+          disabled={loading !== null}
+          className="ml-auto rounded-full px-3 py-1.5 text-xs text-white/40 transition hover:text-red-300 disabled:opacity-40"
+        >
+          {loading === "reset" ? "resetting…" : "reset everything ↺"}
+        </button>
       </div>
     </div>
   );

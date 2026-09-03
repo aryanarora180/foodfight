@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { HistoryEntry, PublicState as State, Restaurant } from "@/lib/types";
+import { REACTION_EMOJI, type HistoryEntry, type PublicState as State, type Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
 import { RestaurantVault } from "./RestaurantVault";
 import { ConfirmModal } from "./ConfirmModal";
@@ -30,6 +30,7 @@ export function SubmissionPhase({
   const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [removingMine, setRemovingMine] = useState(false);
+  const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
 
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
 
@@ -100,6 +101,21 @@ export function SubmissionPhase({
     }
   }
 
+  async function react(restaurantId: string, emoji: string) {
+    const key = `${restaurantId}:${emoji}`;
+    setPendingReactions((p) => ({ ...p, [key]: (p[key] ?? 0) + 1 }));
+    try {
+      await fetch("/api/react", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId, emoji }),
+      });
+      onChanged();
+    } finally {
+      setPendingReactions((p) => ({ ...p, [key]: Math.max(0, (p[key] ?? 0) - 1) }));
+    }
+  }
+
   async function pass() {
     setError(null);
     setPassing(true);
@@ -122,6 +138,7 @@ export function SubmissionPhase({
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       <EditRestaurantModal
         restaurant={editing}
+        selfService={editing?.submittedBy === username}
         onSaved={() => {
           setEditing(null);
           onChanged();
@@ -246,7 +263,7 @@ export function SubmissionPhase({
                   transition={{ duration: 0.4 }}
                   className="felt-panel card-hover relative block rounded-2xl p-4 transition hover:border-gold/50"
                 >
-                  {isAdmin && (
+                  {(isAdmin || r.submittedBy === username) && (
                     <span className="absolute right-3 top-3 flex items-center gap-2">
                       <button
                         type="button"
@@ -256,15 +273,17 @@ export function SubmissionPhase({
                       >
                         ✎
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(r)}
-                        disabled={deleting === r.id}
-                        aria-label={`remove ${r.name}`}
-                        className="text-white/40 hover:text-red-300 disabled:opacity-40"
-                      >
-                        🗑
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setPendingDelete(r)}
+                          disabled={deleting === r.id}
+                          aria-label={`remove ${r.name}`}
+                          className="text-white/40 hover:text-red-300 disabled:opacity-40"
+                        >
+                          🗑
+                        </button>
+                      )}
                     </span>
                   )}
                   <a href={r.url} target="_blank" rel="noreferrer" className="block">
@@ -273,6 +292,37 @@ export function SubmissionPhase({
                     <p className="mt-1 text-xs text-white/40">picked by {r.submittedBy}</p>
                     <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
                   </a>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {REACTION_EMOJI.map((emoji) => {
+                      const key = `${r.id}:${emoji}`;
+                      const total = (r.reactions?.[emoji] ?? 0) + (pendingReactions[key] ?? 0);
+                      return (
+                        <motion.button
+                          key={emoji}
+                          type="button"
+                          onClick={() => react(r.id, emoji)}
+                          whileTap={{ scale: 0.8 }}
+                          className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs transition hover:border-gold/40 hover:bg-gold/10 active:border-gold/60"
+                        >
+                          <span>{emoji}</span>
+                          {total > 0 && (
+                            <AnimatePresence mode="popLayout" initial={false}>
+                              <motion.span
+                                key={total}
+                                initial={{ y: -6, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 6, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="text-white/50"
+                              >
+                                {total}
+                              </motion.span>
+                            </AnimatePresence>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>

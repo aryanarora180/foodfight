@@ -20,19 +20,34 @@ export function SimpleVoteEditor({
     <div>
       <div className="flex flex-col gap-3">
         {restaurants.map((r) => (
-          <button
+          <div
             key={r.id}
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={() => setSelected(r.id)}
-            className={`felt-panel rounded-2xl border px-4 py-3 text-left transition ${
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setSelected(r.id);
+            }}
+            className={`felt-panel cursor-pointer rounded-2xl border px-4 py-3 text-left transition ${
               selected === r.id
                 ? "!border-gold/70 !bg-gold/10"
                 : "border-white/10 hover:border-gold/40"
             }`}
           >
             <p className="font-semibold">{r.name}</p>
-            <p className="text-xs text-white/40">picked by {r.submittedBy}</p>
-          </button>
+            <div className="flex items-center gap-2 text-xs text-white/40">
+              <span>picked by {r.submittedBy}</span>
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-sky/70 underline hover:text-sky"
+              >
+                view menu →
+              </a>
+            </div>
+          </div>
         ))}
       </div>
       <button

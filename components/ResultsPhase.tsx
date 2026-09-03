@@ -3,10 +3,118 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import type { PublicState } from "@/lib/types";
+import type { PublicState, RankedRound, Restaurant } from "@/lib/types";
 import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
 
 const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
+const ROUND_STEP_MS = 1800;
+const FINAL_ROUND_PAUSE_MS = 1500;
+
+function RankedRoundsPlayback({
+  rounds,
+  restaurantById,
+  onDone,
+}: {
+  rounds: RankedRound[];
+  restaurantById: Map<string, Restaurant>;
+  onDone: () => void;
+}) {
+  const [roundIdx, setRoundIdx] = useState(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const isFinalRound = roundIdx === rounds.length - 1;
+    const t = setTimeout(
+      () => {
+        if (isFinalRound) onDone();
+        else setRoundIdx((i) => i + 1);
+      },
+      isFinalRound ? FINAL_ROUND_PAUSE_MS : ROUND_STEP_MS
+    );
+    timeoutRef.current = t;
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundIdx]);
+
+  function skip() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    onDone();
+  }
+
+  const round = rounds[roundIdx];
+  const maxVotes = Math.max(1, ...round.counts.map((c) => c.votes));
+  const isFinalRound = roundIdx === rounds.length - 1;
+  const eliminatedNames = round.eliminated
+    .map((id) => restaurantById.get(id)?.name)
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div className="flex flex-col items-center gap-6 py-10 text-center">
+      <div>
+        <p className="font-display neon-text text-xl sm:text-2xl">
+          {isFinalRound && round.eliminated.length === 0
+            ? "MAJORITY REACHED 🏆"
+            : `ROUND ${roundIdx + 1} — INSTANT RUNOFF`}
+        </p>
+        <p className="mt-1 text-xs text-white/40">
+          round {roundIdx + 1} of {rounds.length}
+        </p>
+      </div>
+      <div className="felt-panel neon-border w-full max-w-md rounded-3xl p-6">
+        <div className="flex flex-col gap-4">
+          <AnimatePresence mode="popLayout">
+            {round.counts.map(({ restaurantId, votes }) => {
+              const r = restaurantById.get(restaurantId);
+              const eliminated = round.eliminated.includes(restaurantId);
+              return (
+                <motion.div
+                  key={restaurantId}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: eliminated ? 0.4 : 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-left"
+                >
+                  <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+                    <span
+                      className={`truncate ${eliminated ? "text-white/40 line-through" : "font-semibold"}`}
+                    >
+                      {r?.name ?? "?"} {eliminated && "❌"}
+                    </span>
+                    <span className="shrink-0 text-gold">{votes}</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-black/40">
+                    <motion.div
+                      className={`h-full rounded-full ${
+                        eliminated
+                          ? "bg-white/20"
+                          : "bg-gradient-to-r from-royal via-indigo to-sky"
+                      }`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(votes / maxVotes) * 100}%` }}
+                      transition={{ duration: 0.6 }}
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
+      <p className="min-h-[1.25rem] text-sm text-white/50">
+        {round.eliminated.length > 0
+          ? `${eliminatedNames} eliminated — votes shift to next choice.`
+          : isFinalRound
+            ? "someone cleared a majority of the remaining ballots."
+            : " "}
+      </p>
+      <button onClick={skip} className="chip-btn-ghost rounded-full px-5 py-2 text-sm">
+        skip ⏭️
+      </button>
+    </div>
+  );
+}
 
 export function ResultsPhase({ state }: { state: PublicState }) {
   const confettiFired = useRef(false);
@@ -15,16 +123,22 @@ export function ResultsPhase({ state }: { state: PublicState }) {
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const unit = state.votingType === "points" ? "pts" : "votes";
 
-  const canSpin = Boolean(state.winner) && !state.tie && state.restaurants.length > 1;
-  const [revealed, setRevealed] = useState(!canSpin);
+  const hasRoundsPlayback =
+    state.votingType === "ranked" &&
+    Boolean(state.winner) &&
+    !state.tie &&
+    (state.rankedRounds?.length ?? 0) > 1;
+
+  const canSpin =
+    !hasRoundsPlayback && Boolean(state.winner) && !state.tie && state.restaurants.length > 1;
+
+  const [stage, setStage] = useState<"rounds" | "spin" | "revealed">(
+    hasRoundsPlayback ? "rounds" : canSpin ? "spin" : "revealed"
+  );
   const [spinName, setSpinName] = useState(state.restaurants[0]?.name ?? "");
 
   useEffect(() => {
-    if (!canSpin) {
-      setRevealed(true);
-      return;
-    }
-    setRevealed(false);
+    if (stage !== "spin") return;
     const pool = state.restaurants;
     let elapsed = 0;
     SPIN_STEP_DELAYS.forEach((delay, stepIdx) => {
@@ -33,7 +147,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       const t = setTimeout(() => {
         if (isLast) {
           setSpinName(state.winner!.restaurant.name);
-          setRevealed(true);
+          setStage("revealed");
         } else {
           setSpinName(pool[stepIdx % pool.length].name);
         }
@@ -45,16 +159,16 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       timeoutsRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stage]);
 
   function skipSpin() {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
-    setRevealed(true);
+    setStage("revealed");
   }
 
   useEffect(() => {
-    if (!revealed || confettiFired.current) return;
+    if (stage !== "revealed" || confettiFired.current) return;
     confettiFired.current = true;
     const colors = ["#ffd23f", "#2f6fed", "#38bdf8", "#1e40af", "#34d399"];
     const duration = 1400;
@@ -64,9 +178,19 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       confetti({ particleCount: 4, angle: 120, spread: 70, origin: { x: 1 }, colors });
       if (Date.now() < end) requestAnimationFrame(frame);
     })();
-  }, [revealed]);
+  }, [stage]);
 
-  if (!revealed) {
+  if (stage === "rounds" && state.rankedRounds) {
+    return (
+      <RankedRoundsPlayback
+        rounds={state.rankedRounds}
+        restaurantById={restaurantById}
+        onDone={() => setStage("revealed")}
+      />
+    );
+  }
+
+  if (stage === "spin") {
     return (
       <div className="flex flex-col items-center gap-6 py-10 text-center">
         <p className="font-display neon-text text-2xl sm:text-3xl">SPINNING THE REELS…</p>

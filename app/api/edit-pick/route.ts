@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { nanoid } from "nanoid";
 import { getSession } from "@/lib/session";
 import { updateState } from "@/lib/store";
 import { toPublicState } from "@/lib/gameLogic";
-import type { Restaurant } from "@/lib/types";
 
 const schema = z.object({
   name: z.string().trim().min(1, "restaurant name is required").max(80),
@@ -16,6 +14,7 @@ export async function POST(req: NextRequest) {
   if (!session.username) {
     return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
+  const username = session.username;
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -24,8 +23,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  const { name, url } = parsed.data;
 
-  const username = session.username;
   const { state, result } = await updateState((state) => {
     if (!state.users[username.toLowerCase()]) {
       return { error: "you've been removed from this round" as const };
@@ -33,42 +32,18 @@ export async function POST(req: NextRequest) {
     if (state.phase !== "submission") {
       return { error: "submissions are closed" as const };
     }
-    const existingIdx = state.restaurants.findIndex((r) => r.submittedBy === username);
-    const normalized = parsed.data.name.trim().toLowerCase();
+    const idx = state.restaurants.findIndex((r) => r.submittedBy === username);
+    if (idx < 0) {
+      return { error: "you haven't submitted a pick" as const };
+    }
+    const normalized = name.trim().toLowerCase();
     const dupe = state.restaurants.some(
-      (r, idx) => idx !== existingIdx && r.name.trim().toLowerCase() === normalized
+      (r, i) => i !== idx && r.name.trim().toLowerCase() === normalized
     );
     if (dupe) {
-      return { error: "that place is already on the table — pick another" as const };
+      return { error: "that place is already on the table — pick another name" as const };
     }
-    const restaurant: Restaurant = {
-      id: existingIdx >= 0 ? state.restaurants[existingIdx].id : nanoid(8),
-      name: parsed.data.name,
-      url: parsed.data.url,
-      submittedBy: username,
-      submittedAt: Date.now(),
-      reactions: existingIdx >= 0 ? state.restaurants[existingIdx].reactions : {},
-    };
-    if (existingIdx >= 0) {
-      state.restaurants[existingIdx] = restaurant;
-    } else {
-      state.restaurants.push(restaurant);
-    }
-    delete state.passes[username];
-
-    const historyKey = username.toLowerCase();
-    const historyDupe = Object.entries(state.restaurantHistory).some(
-      ([key, h]) => key !== historyKey && h.name.trim().toLowerCase() === normalized
-    );
-    if (!historyDupe) {
-      state.restaurantHistory[historyKey] = {
-        username,
-        name: parsed.data.name,
-        url: parsed.data.url,
-        updatedAt: Date.now(),
-      };
-    }
-
+    state.restaurants[idx] = { ...state.restaurants[idx], name, url };
     return { ok: true as const };
   });
 
@@ -77,7 +52,7 @@ export async function POST(req: NextRequest) {
       await session.destroy();
       return NextResponse.json({ error: result.error }, { status: 401 });
     }
-    return NextResponse.json({ error: result.error }, { status: 403 });
+    return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
   return NextResponse.json({ state: toPublicState(state) });

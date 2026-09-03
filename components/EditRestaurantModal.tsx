@@ -6,10 +6,12 @@ import type { Restaurant } from "@/lib/types";
 
 function EditRestaurantForm({
   restaurant,
+  selfService,
   onSaved,
   onCancel,
 }: {
   restaurant: Restaurant;
+  selfService: boolean;
   onSaved: () => void;
   onCancel: () => void;
 }) {
@@ -23,10 +25,11 @@ function EditRestaurantForm({
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/edit-restaurant", {
+      const endpoint = selfService ? "/api/edit-pick" : "/api/admin/edit-restaurant";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: restaurant.id, name, url }),
+        body: JSON.stringify(selfService ? { name, url } : { id: restaurant.id, name, url }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -52,7 +55,7 @@ function EditRestaurantForm({
     >
       <p className="font-display mb-1 text-lg text-gold">edit this pick</p>
       <p className="mb-4 text-xs text-white/40">
-        submitted by {restaurant.submittedBy} — admin override
+        {selfService ? "update your details below" : `submitted by ${restaurant.submittedBy} — admin override`}
       </p>
       <form onSubmit={save}>
         <label className="mb-1 block text-sm font-semibold text-gold/90">Restaurant name</label>
@@ -96,10 +99,12 @@ function EditRestaurantForm({
 
 export function EditRestaurantModal({
   restaurant,
+  selfService = false,
   onSaved,
   onCancel,
 }: {
   restaurant: Restaurant | null;
+  selfService?: boolean;
   onSaved: () => void;
   onCancel: () => void;
 }) {
@@ -116,6 +121,7 @@ export function EditRestaurantModal({
           <EditRestaurantForm
             key={restaurant.id}
             restaurant={restaurant}
+            selfService={selfService}
             onSaved={onSaved}
             onCancel={onCancel}
           />

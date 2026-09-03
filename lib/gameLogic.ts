@@ -1,4 +1,4 @@
-import type { GameState, PublicState, PublicUser, ScoreEntry, VotingType } from "./types";
+import type { GameState, PublicState, PublicUser, RankedRound, ScoreEntry, VotingType } from "./types";
 
 export const MIN_RESTAURANTS_TO_VOTE = 2;
 
@@ -12,6 +12,7 @@ interface ResultsComputation {
   scores: ScoreEntry[];
   winnerId: string | null;
   tie: boolean;
+  rounds?: RankedRound[];
 }
 
 function computePointsResults(state: GameState): ResultsComputation {
@@ -85,6 +86,7 @@ function computeRankedResults(state: GameState): ResultsComputation {
 
   const active = new Set(restaurants.map((r) => r.id));
   const finalCount = new Map<string, number>();
+  const rounds: RankedRound[] = [];
   let winnerId: string | null = null;
   let tie = false;
 
@@ -101,8 +103,13 @@ function computeRankedResults(state: GameState): ResultsComputation {
     }
     for (const [id, c] of counts) finalCount.set(id, c);
 
+    const roundCounts = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([restaurantId, votes]) => ({ restaurantId, votes }));
+
     if (active.size === 1) {
       winnerId = [...active][0];
+      rounds.push({ counts: roundCounts, eliminated: [] });
       break;
     }
 
@@ -110,6 +117,7 @@ function computeRankedResults(state: GameState): ResultsComputation {
     const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
     if (validBallots > 0 && sorted[0][1] > majority) {
       winnerId = sorted[0][0];
+      rounds.push({ counts: roundCounts, eliminated: [] });
       break;
     }
 
@@ -117,9 +125,11 @@ function computeRankedResults(state: GameState): ResultsComputation {
     const lowest = [...counts.entries()].filter(([, v]) => v === minVotes).map(([id]) => id);
     if (lowest.length === active.size) {
       tie = true;
+      rounds.push({ counts: roundCounts, eliminated: [] });
       break;
     }
     for (const id of lowest) active.delete(id);
+    rounds.push({ counts: roundCounts, eliminated: lowest });
   }
 
   const scores = restaurants
@@ -134,7 +144,7 @@ function computeRankedResults(state: GameState): ResultsComputation {
       return b.points - a.points || b.firstPlaceVotes - a.firstPlaceVotes;
     });
 
-  return { scores, winnerId, tie };
+  return { scores, winnerId, tie, rounds };
 }
 
 export function computeResults(state: GameState): ResultsComputation {
@@ -144,7 +154,7 @@ export function computeResults(state: GameState): ResultsComputation {
 }
 
 export function toPublicState(state: GameState): PublicState {
-  const { scores, winnerId, tie } = computeResults(state);
+  const { scores, winnerId, tie, rounds } = computeResults(state);
   const winner = scores.find((s) => s.restaurant.id === winnerId) ?? null;
 
   const users: PublicUser[] = Object.values(state.users)
@@ -173,6 +183,8 @@ export function toPublicState(state: GameState): PublicState {
     scores,
     winner: state.phase === "results" && !tie ? winner : null,
     tie: state.phase === "results" && tie,
+    rankedRounds:
+      state.phase === "results" && state.votingType === "ranked" ? (rounds ?? []) : null,
     users,
     history,
     updatedAt: state.updatedAt,

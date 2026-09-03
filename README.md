@@ -1,30 +1,77 @@
 # 🎰 Food Fight
 
 A gamified, slot-machine-themed lunch picker for your team. Everyone submits one
-restaurant, then the group ranks the field ranked-choice style (1st = N points,
-down to 1), and the admin pulls the trigger to reveal a winner — confetti included.
+restaurant, the group votes in whatever format the admin picks, and the house
+reveals a winner — confetti and drama included.
 
-## How it works
+## Features
 
-1. **Log in** — accounts are admin-created. An admin makes your account and
-   hands you a temp password; your first login forces you to swap it for a
-   real one. The only exception is the very first admin, who bootstraps their
-   own account by picking a password on their first-ever login (either the
-   username listed in `ADMIN_USERNAMES`, or whoever gets there first if that's
-   unset).
-2. **Submission phase** — everyone throws in one restaurant + a menu link. All
-   picks are public as they come in.
-3. **Voting phase** — the admin starts voting once there are at least 2 picks.
-   Everyone drags to rank every restaurant. 1st place gets N points (N =
-   number of restaurants), 2nd gets N-1, … down to 1 point. Live odds and every
-   ballot are visible to everyone the whole time.
-4. **Results** — the admin reveals the winner. Confetti, crown, final tally, and
-   every ballot are shown.
-5. **Admin** can reset the game at any point, which clears picks/votes and
-   returns to the submission phase (accounts are kept).
+### Accounts & auth
+- Admin-created accounts only, with one bootstrap exception: the very first
+  person to log in becomes admin automatically (or whoever's listed in
+  `ADMIN_USERNAMES`, see below).
+- Every account needs a real password. Admin-created accounts get a one-time
+  temp password and are forced to set a real one on first login.
+- Kicked users get their session killed immediately, even mid-action.
 
-The first person to ever log in becomes admin automatically. You can instead
-pin specific admins via the `ADMIN_USERNAMES` env var (see below).
+### Submission phase
+- Everyone submits one restaurant + a menu link; picks are public as they
+  land. You can update your pick, or **remove it entirely** and go back to
+  square one, any time before voting starts.
+- **The vault 🗄️** — every restaurant anyone has ever submitted is saved to a
+  shared history. One click re-submits an old favorite instead of retyping it.
+- **Reactions** — react to any pick with 🔥 😍 🤢 👀. No limit — mash the same
+  emoji as many times as you want, just for fun. Counts update live for
+  everyone.
+- Don't want to submit anything? Hit **skip** — you'll still need to vote once
+  voting opens.
+- Admins can edit or remove *anyone's* pick; you can always edit or remove
+  your own.
+
+### Voting — pick your format
+The admin chooses the format each round, right before voting opens:
+- **Simple** — tap one favorite, most votes wins.
+- **Points** — drag to rank everyone; 1st place scores N points (N =
+  restaurant count), 2nd scores N-1, … down to 1.
+- **Ranked choice (instant runoff)** — drag to rank everyone; if nobody has a
+  majority, the lowest-ranked pick is eliminated and its votes shift to
+  whoever's next on those ballots, repeating until someone clears a majority.
+
+Menu links stay visible on every voting screen, so nobody has to remember
+what a restaurant serves from three screens ago.
+
+**Odds and ballots stay sealed for everyone — including admins — until the
+reveal.** No peeking, no strategic voting.
+
+### Results & reveal
+- The admin triggers the reveal (or it happens automatically once everyone's
+  voted).
+- **Ranked-choice elections get a full instant-runoff playback**: each round
+  plays out on screen with live vote-count bars, and the lowest pick is
+  visibly eliminated before the next round's votes redistribute — all the way
+  to the winning round.
+- Simple and points elections get a suspenseful slot-machine name-spin before
+  the reveal.
+- Either way: confetti, a crown, the final tally, and every ballot, visible to
+  everyone.
+- Ties are called out explicitly instead of picking a fake winner.
+
+### Admin controls
+- Start voting (pick the format), or force an early reveal.
+- Create accounts (hands back a one-time temp password) and reset anyone's
+  password.
+- Kick an individual user, or clear every non-admin seat at once — both ask
+  for confirmation first.
+- Edit or delete any submitted restaurant, or any vault/history entry.
+- Reset everything — clears picks and votes and returns to the submission
+  phase, but keeps accounts and vault history. Tucked away as a small,
+  deliberately low-key control so it doesn't compete with the buttons you
+  actually want to press.
+
+### Live roster
+A status strip always shows who's in the round and where they stand — each
+person gets their own tile with a plainly-readable status (`voted ✓`,
+`waiting …`, `sitting out 🤷`), no hovering required.
 
 ## Tech stack
 
@@ -64,7 +111,10 @@ on disk, which is gitignored.
 
 ## Notes
 
-- Ranked-choice scoring: for N restaurants, rank *i* (0-indexed, 0 = favorite)
-  earns `N - i` points. Ties are called out explicitly on the results screen.
+- Points scoring: for N restaurants, rank *i* (0-indexed, 0 = favorite) earns
+  `N - i` points.
+- Ranked choice: instant-runoff with ties on the lowest count eliminated
+  together; a full tie among everyone remaining is reported as a tie rather
+  than forced to a winner.
 - Storage uses a simple read-modify-write on a single JSON blob — fine for a
   small team's lunch vote, not built for high-concurrency use.

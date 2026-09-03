@@ -7,6 +7,14 @@ export interface Restaurant {
   url: string;
   submittedBy: string;
   submittedAt: number;
+  reactions?: Record<string, number>;
+}
+
+export const REACTION_EMOJI = ["🔥", "😍", "🤢", "👀"] as const;
+
+export interface RankedRound {
+  counts: { restaurantId: string; votes: number }[];
+  eliminated: string[];
 }
 
 export interface UserRecord {
@@ -63,6 +71,7 @@ export interface PublicState {
   scores: ScoreEntry[];
   winner: ScoreEntry | null;
   tie: boolean;
+  rankedRounds: RankedRound[] | null;
   users: PublicUser[];
   history: HistoryEntry[];
   updatedAt: number;

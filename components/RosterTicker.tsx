@@ -130,47 +130,54 @@ export function RosterTicker({
           const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
           const passed = phase === "submission" && u.passedSubmission;
           const isSelf = u.username.toLowerCase() === username.toLowerCase();
+          const statusText = passed ? "sitting out 🤷" : done ? `${label} ✓` : "waiting …";
           return (
-            <span
+            <div
               key={u.username}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
-                done ? "bg-win/15 text-win" : "bg-white/5 text-white/40"
+              className={`flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
+                done
+                  ? "border-win/30 bg-win/10"
+                  : passed
+                    ? "border-gold/25 bg-gold/5"
+                    : "border-white/10 bg-white/5"
               }`}
-              title={
-                passed
-                  ? `${u.username} — sitting this one out`
-                  : done
-                    ? `${u.username} ${label}`
-                    : `${u.username} — waiting`
-              }
             >
-              {u.isAdmin && "👑"}
-              {u.username}
-              {passed ? " 🤷" : done ? " ✓" : " …"}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setPendingResetPw(u.username)}
-                  disabled={resettingPw === u.username}
-                  aria-label={`reset ${u.username}'s password`}
-                  title={`reset ${u.username}'s password`}
-                  className="ml-1 leading-none text-white/40 hover:text-gold disabled:opacity-40"
-                >
-                  🔑
-                </button>
-              )}
-              {isAdmin && !isSelf && (
-                <button
-                  type="button"
-                  onClick={() => setPendingRemove(u.username)}
-                  disabled={removing === u.username}
-                  aria-label={`remove ${u.username}`}
-                  className="ml-1 leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
-                >
-                  ×
-                </button>
-              )}
-            </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-semibold">
+                  {u.isAdmin && "👑"}
+                  {u.username}
+                </span>
+                {isAdmin && (
+                  <span className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPendingResetPw(u.username)}
+                      disabled={resettingPw === u.username}
+                      aria-label={`reset ${u.username}'s password`}
+                      className="leading-none text-white/40 hover:text-gold disabled:opacity-40"
+                    >
+                      🔑
+                    </button>
+                    {!isSelf && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemove(u.username)}
+                        disabled={removing === u.username}
+                        aria-label={`remove ${u.username}`}
+                        className="leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </span>
+                )}
+              </div>
+              <span
+                className={`text-xs ${done ? "text-win" : passed ? "text-gold/80" : "text-white/40"}`}
+              >
+                {statusText}
+              </span>
+            </div>
           );
         })}
       </div>
