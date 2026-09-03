@@ -58,7 +58,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md"
       >
-        <div className="bulb-border mb-8 text-center">
+        <div className="bulb-border felt-panel neon-border mb-8 rounded-3xl px-6 py-8 text-center">
           <h1 className="font-display neon-text text-5xl leading-tight sm:text-6xl">
             FOOD
             <br />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import type { PublicState } from "@/lib/types";
 import { RankingEditor } from "./RankingEditor";
 import { SimpleVoteEditor } from "./SimpleVoteEditor";
@@ -25,12 +24,10 @@ const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: str
 export function VotingPhase({
   state,
   username,
-  isAdmin,
   onChanged,
 }: {
   state: PublicState;
   username: string;
-  isAdmin: boolean;
   onChanged: () => void;
 }) {
   const myVote = state.votes.find((v) => v.username === username);
@@ -39,8 +36,6 @@ export function VotingPhase({
   const [submitting, setSubmitting] = useState(false);
 
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
-  const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
-  const unit = state.votingType === "points" ? "pts" : "votes";
   const copy = HEADER_COPY[state.votingType];
 
   async function submitVote(order: string[]) {
@@ -122,35 +117,12 @@ export function VotingPhase({
       <div className="flex flex-col gap-6">
         <div>
           <h3 className="font-display mb-3 text-lg text-sky">Live odds 📊</h3>
-          {isAdmin ? (
-            <div className="flex flex-col gap-3">
-              {state.scores.map((s) => (
-                <div key={s.restaurant.id} className="felt-panel rounded-2xl p-4">
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <span className="font-semibold">{s.restaurant.name}</span>
-                    <span className="font-display text-gold">
-                      {s.points} {unit}
-                    </span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-black/40">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(s.points / maxPoints) * 100}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="felt-panel rounded-2xl p-6 text-center">
-              <p className="mb-2 text-3xl">🔒</p>
-              <p className="text-sm text-white/50">
-                the house keeps the odds close to the chest until the reveal.
-              </p>
-            </div>
-          )}
+          <div className="felt-panel rounded-2xl p-6 text-center">
+            <p className="mb-2 text-3xl">🔒</p>
+            <p className="text-sm text-white/50">
+              odds stay sealed for everyone — even the house — until the reveal.
+            </p>
+          </div>
         </div>
 
         <div>

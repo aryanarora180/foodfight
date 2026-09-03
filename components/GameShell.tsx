@@ -98,12 +98,7 @@ export function GameShell({
             />
           )}
           {state.phase === "voting" && (
-            <VotingPhase
-              state={state}
-              username={username}
-              isAdmin={isAdmin}
-              onChanged={() => mutate()}
-            />
+            <VotingPhase state={state} username={username} onChanged={() => mutate()} />
           )}
           {state.phase === "results" && <ResultsPhase state={state} />}
         </motion.div>

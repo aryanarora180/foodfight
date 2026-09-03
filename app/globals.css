@@ -45,8 +45,9 @@ body {
 }
 
 body {
-  background: radial-gradient(1200px 800px at 50% -10%, #163b66 0%, var(--background) 55%),
+  background: radial-gradient(900px 600px at 50% 0%, #163b66 0%, var(--background) 60%),
     var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   min-height: 100dvh;
@@ -104,7 +105,9 @@ body {
     0 0 0 3px rgba(255, 210, 63, 0.15),
     0 8px 0 0 #a7690a,
     0 14px 24px rgba(255, 178, 3, 0.35);
-  transition: filter 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
 }
 .chip-btn:disabled {
   filter: grayscale(0.6) brightness(0.6);
@@ -112,6 +115,10 @@ body {
 }
 .chip-btn:not(:disabled):hover {
   filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.chip-btn:not(:disabled):active {
+  transform: translateY(1px);
 }
 
 .chip-btn-ghost {
@@ -121,9 +128,27 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1.5px solid rgba(255, 210, 63, 0.4);
   color: var(--gold);
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 .chip-btn-ghost:hover {
   background: rgba(255, 210, 63, 0.08);
+  transform: translateY(-1px);
+}
+.chip-btn-ghost:active {
+  transform: translateY(0);
+}
+
+.card-hover {
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
 }
 
 .bulb-border {
@@ -132,7 +157,7 @@ body {
 .bulb-border::before {
   content: "";
   position: absolute;
-  inset: -10px;
+  inset: -4px;
   border-radius: inherit;
   background-image: radial-gradient(circle, rgba(255, 210, 63, 0.9) 2px, transparent 2.5px);
   background-size: 22px 22px;

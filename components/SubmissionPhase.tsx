@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { HistoryEntry, PublicState as State, Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
 import { RestaurantVault } from "./RestaurantVault";
+import { ConfirmModal } from "./ConfirmModal";
 
 export function SubmissionPhase({
   state,
@@ -26,6 +27,8 @@ export function SubmissionPhase({
   const [passing, setPassing] = useState(false);
   const [overridePass, setOverridePass] = useState(false);
   const [editing, setEditing] = useState<Restaurant | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
 
@@ -59,6 +62,23 @@ export function SubmissionPhase({
     setError(null);
   }
 
+  async function confirmDeleteRestaurant() {
+    const target = pendingDelete;
+    setPendingDelete(null);
+    if (!target) return;
+    setDeleting(target.id);
+    try {
+      await fetch("/api/admin/delete-restaurant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: target.id }),
+      });
+      onChanged();
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   async function pass() {
     setError(null);
     setPassing(true);
@@ -86,6 +106,14 @@ export function SubmissionPhase({
           onChanged();
         }}
         onCancel={() => setEditing(null)}
+      />
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="remove this pick?"
+        message={`${pendingDelete?.name} comes off the table — ${pendingDelete?.submittedBy} can submit a new one.`}
+        confirmLabel="remove it"
+        onConfirm={confirmDeleteRestaurant}
+        onCancel={() => setPendingDelete(null)}
       />
       <div className="felt-panel neon-border rounded-3xl p-6">
         {showPassedCard ? (
@@ -185,21 +213,32 @@ export function SubmissionPhase({
                   animate={{ opacity: 1, rotateY: 0 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.4 }}
-                  className="felt-panel relative block rounded-2xl p-4 transition hover:border-gold/50"
+                  className="felt-panel card-hover relative block rounded-2xl p-4 transition hover:border-gold/50"
                 >
                   {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setEditing(r)}
-                      aria-label={`edit ${r.name}`}
-                      className="absolute right-3 top-3 text-white/40 hover:text-gold"
-                    >
-                      ✎
-                    </button>
+                    <span className="absolute right-3 top-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditing(r)}
+                        aria-label={`edit ${r.name}`}
+                        className="text-white/40 hover:text-gold"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingDelete(r)}
+                        disabled={deleting === r.id}
+                        aria-label={`remove ${r.name}`}
+                        className="text-white/40 hover:text-red-300 disabled:opacity-40"
+                      >
+                        🗑
+                      </button>
+                    </span>
                   )}
                   <a href={r.url} target="_blank" rel="noreferrer" className="block">
                     <p className="mb-1 text-2xl">🍽️</p>
-                    <p className="font-semibold pr-5">{r.name}</p>
+                    <p className="font-semibold pr-10">{r.name}</p>
                     <p className="mt-1 text-xs text-white/40">picked by {r.submittedBy}</p>
                     <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
                   </a>
