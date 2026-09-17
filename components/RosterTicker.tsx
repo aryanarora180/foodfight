@@ -28,11 +28,13 @@ export function RosterTicker({
     null
   );
   const [togglingNotComing, setTogglingNotComing] = useState<string | null>(null);
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
 
   if (users.length === 0) return null;
   const label = phase === "submission" ? "locked in a pick" : "voted";
-  const counted = users.filter((u) => !u.notComing);
-  const doneCount = counted.filter((u) => (phase === "submission" ? u.hasSubmitted : u.hasVoted))
+  const active = users.filter((u) => !u.notComing);
+  const notComingUsers = users.filter((u) => u.notComing);
+  const doneCount = active.filter((u) => (phase === "submission" ? u.hasSubmitted : u.hasVoted))
     .length;
   const nonAdminCount = users.filter((u) => !u.isAdmin).length;
 
@@ -87,18 +89,117 @@ export function RosterTicker({
   async function toggleNotComing(target: string, value: boolean) {
     setTogglingNotComing(target);
     try {
-      const isSelf = target.toLowerCase() === username.toLowerCase();
-      const endpoint = isSelf ? "/api/not-coming" : "/api/admin/set-not-coming";
-      const body = isSelf ? { value } : { username: target, value };
-      await fetch(endpoint, {
+      await fetch("/api/admin/set-not-coming", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ username: target, value }),
       });
       onChanged();
     } finally {
       setTogglingNotComing(null);
     }
+  }
+
+  function renderTile(u: PublicUser) {
+    const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
+    const passed = phase === "submission" && u.passedSubmission;
+    const isSelf = u.username.toLowerCase() === username.toLowerCase();
+    const menuOpen = openMenuFor === u.username;
+    const statusText = u.notComing
+      ? "not coming 🙅"
+      : passed
+        ? "sitting out 🤷"
+        : done
+          ? `${label} ✓`
+          : "waiting …";
+
+    return (
+      <div
+        key={u.username}
+        className={`relative flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
+          u.notComing
+            ? "border-white/5 bg-white/[0.03] opacity-60"
+            : done
+              ? "border-win/30 bg-win/10"
+              : passed
+                ? "border-gold/25 bg-gold/5"
+                : "border-white/10 bg-white/5"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-sm font-semibold">
+            {u.isAdmin && "👑"}
+            {u.username}
+          </span>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setOpenMenuFor(menuOpen ? null : u.username)}
+              aria-label={`actions for ${u.username}`}
+              className="shrink-0 rounded-md px-1 leading-none text-white/40 hover:bg-white/10 hover:text-white/80"
+            >
+              ⋯
+            </button>
+          )}
+        </div>
+        <span
+          className={`text-xs ${
+            u.notComing
+              ? "text-white/30"
+              : done
+                ? "text-win"
+                : passed
+                  ? "text-gold/80"
+                  : "text-white/40"
+          }`}
+        >
+          {statusText}
+        </span>
+
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuFor(null)} />
+            <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-lg border border-white/10 bg-[#0b1c33] py-1 shadow-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleNotComing(u.username, !u.notComing);
+                  setOpenMenuFor(null);
+                }}
+                disabled={togglingNotComing === u.username}
+                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
+              >
+                {u.notComing ? "↩️ count back in" : "🙅 mark as not coming"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingResetPw(u.username);
+                  setOpenMenuFor(null);
+                }}
+                disabled={resettingPw === u.username}
+                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
+              >
+                🔑 reset password
+              </button>
+              {!isSelf && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingRemove(u.username);
+                    setOpenMenuFor(null);
+                  }}
+                  disabled={removing === u.username}
+                  className="block w-full px-3 py-2 text-left text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-40"
+                >
+                  × remove from round
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -130,7 +231,7 @@ export function RosterTicker({
       <TempPasswordModal result={pwResult} onClose={() => setPwResult(null)} />
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold tracking-wide text-sky/80">
-          WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{counted.length})
+          WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{active.length})
         </p>
         {isAdmin && nonAdminCount > 0 && (
           <button
@@ -143,94 +244,16 @@ export function RosterTicker({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {users.map((u) => {
-          const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
-          const passed = phase === "submission" && u.passedSubmission;
-          const isSelf = u.username.toLowerCase() === username.toLowerCase();
-          const statusText = u.notComing
-            ? "not coming 🙅"
-            : passed
-              ? "sitting out 🤷"
-              : done
-                ? `${label} ✓`
-                : "waiting …";
-          return (
-            <div
-              key={u.username}
-              className={`flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
-                u.notComing
-                  ? "border-white/5 bg-white/[0.03] opacity-60"
-                  : done
-                    ? "border-win/30 bg-win/10"
-                    : passed
-                      ? "border-gold/25 bg-gold/5"
-                      : "border-white/10 bg-white/5"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-semibold">
-                  {u.isAdmin && "👑"}
-                  {u.username}
-                </span>
-                <span className="flex shrink-0 items-center gap-1">
-                  {(isSelf || isAdmin) && (
-                    <button
-                      type="button"
-                      onClick={() => toggleNotComing(u.username, !u.notComing)}
-                      disabled={togglingNotComing === u.username}
-                      aria-label={
-                        u.notComing ? `count ${u.username} back in` : `mark ${u.username} as not coming`
-                      }
-                      title={u.notComing ? "count back in" : "mark as not coming"}
-                      className="leading-none text-white/40 hover:text-sky disabled:opacity-40"
-                    >
-                      {u.notComing ? "↩️" : "🙅"}
-                    </button>
-                  )}
-                  {isAdmin && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setPendingResetPw(u.username)}
-                        disabled={resettingPw === u.username}
-                        aria-label={`reset ${u.username}'s password`}
-                        className="leading-none text-white/40 hover:text-gold disabled:opacity-40"
-                      >
-                        🔑
-                      </button>
-                      {!isSelf && (
-                        <button
-                          type="button"
-                          onClick={() => setPendingRemove(u.username)}
-                          disabled={removing === u.username}
-                          aria-label={`remove ${u.username}`}
-                          className="leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </>
-                  )}
-                </span>
-              </div>
-              <span
-                className={`text-xs ${
-                  u.notComing
-                    ? "text-white/30"
-                    : done
-                      ? "text-win"
-                      : passed
-                        ? "text-gold/80"
-                        : "text-white/40"
-                }`}
-              >
-                {statusText}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <div className="flex flex-wrap gap-2">{active.map(renderTile)}</div>
+
+      {notComingUsers.length > 0 && (
+        <div className="mt-3 border-t border-white/5 pt-3">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-white/30">
+            NOT COMING ({notComingUsers.length})
+          </p>
+          <div className="flex flex-wrap gap-2">{notComingUsers.map(renderTile)}</div>
+        </div>
+      )}
     </div>
   );
 }

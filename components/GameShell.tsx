@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGameState } from "@/lib/hooks";
 import { SubmissionPhase } from "./SubmissionPhase";
@@ -30,6 +31,7 @@ export function GameShell({
   onLogout: () => void;
 }) {
   const { state, mutate } = useGameState(true);
+  const [togglingNotComing, setTogglingNotComing] = useState(false);
 
   if (!state) {
     return (
@@ -37,6 +39,23 @@ export function GameShell({
         <p className="font-display animate-pulse text-gold">shuffling the deck…</p>
       </div>
     );
+  }
+
+  const myUser = state.users.find((u) => u.username === username);
+  const notComing = Boolean(myUser?.notComing);
+
+  async function toggleNotComing() {
+    setTogglingNotComing(true);
+    try {
+      await fetch("/api/not-coming", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: !notComing }),
+      });
+      mutate();
+    } finally {
+      setTogglingNotComing(false);
+    }
   }
 
   return (
@@ -55,6 +74,19 @@ export function GameShell({
               {VOTING_TYPE_BADGE[state.votingType]}
             </span>
           )}
+          <button
+            type="button"
+            onClick={toggleNotComing}
+            disabled={togglingNotComing}
+            title={notComing ? "you're marked as not coming — click to rejoin" : "not coming this round?"}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
+              notComing
+                ? "bg-gold/15 text-gold hover:bg-gold/20"
+                : "bg-white/5 text-white/50 hover:text-white/80"
+            }`}
+          >
+            {togglingNotComing ? "…" : notComing ? "🙅 not coming" : "not coming?"}
+          </button>
           <span className="rounded-full bg-white/5 px-3 py-1.5 text-sm">
             {isAdmin && "👑 "}
             {username}

@@ -71,18 +71,23 @@ reveal.** No peeking, no strategic voting.
 ### Live roster
 A status strip always shows who's in the round and where they stand — each
 person gets their own tile with a plainly-readable status (`voted ✓`,
-`waiting …`, `sitting out 🤷`, `not coming 🙅`), no hovering required.
+`waiting …`, `sitting out 🤷`). Admins get a labeled `⋯` menu per tile
+(reset password, remove, mark not coming) instead of a row of icons, so it
+stays readable even with a full roster.
 
 ### Spectating
-Not coming this round? Mark yourself as **not coming** (from your own roster
-tile, any time before results) and you become a pure spectator: no need to
-submit or vote, and you're dropped from the "everyone's in" / "everyone's
-voted" counts so you can't accidentally hold up the round. You still see
-everything everyone else does — submitted picks, and results once they drop —
-just like an active participant, with no elevated visibility into sealed
-odds. Flip it back with one click ("actually, count me in") any time before
-results. Admins can mark — or un-mark — anyone else the same way. The flag is
-round-scoped and clears automatically on reset.
+A **"not coming?"** pill sits right in the header, next to your name, on
+every screen — the one place to mark yourself out. Toggle it on and you
+become a pure spectator: no need to submit or vote, and you're pulled out of
+the "everyone's in" / "everyone's voted" counts so you can't accidentally
+hold up the round. You still see everything everyone else does — submitted
+picks, and results once they drop — just like an active participant, with no
+elevated visibility into sealed odds. Not-coming users get their own section
+in the roster, separate from everyone still in the round. The flag **carries
+over between rounds** — set it once and it sticks until you (or an admin)
+flip it back, so you don't have to re-flag yourself every time someone resets
+the board. Admins can mark or un-mark anyone else the same way from that
+person's `⋯` menu.
 
 ## Tech stack
 

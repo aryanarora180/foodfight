@@ -25,9 +25,6 @@ export async function POST(req: NextRequest) {
     if (!record) {
       return { error: "you've been removed from this round" as const };
     }
-    if (state.phase === "results") {
-      return { error: "this round is already over" as const };
-    }
     if (parsed.data.value) record.notComing = true;
     else delete record.notComing;
     return { ok: true as const };
