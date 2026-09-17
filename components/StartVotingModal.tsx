@@ -9,19 +9,19 @@ const OPTIONS: { type: VotingType; emoji: string; label: string; blurb: string }
     type: "simple",
     emoji: "🗳️",
     label: "Simple",
-    blurb: "everyone picks one favorite — most votes wins.",
+    blurb: "everyone picks one favorite. most votes wins.",
   },
   {
     type: "points",
     emoji: "📊",
     label: "Points",
-    blurb: "rank them all — 1st place scores highest, points decide the winner.",
+    blurb: "rank them all. 1st place scores highest, points decide the winner.",
   },
   {
     type: "ranked",
     emoji: "🏆",
     label: "Ranked choice",
-    blurb: "rank them all — lowest pick gets eliminated round by round until someone has a majority.",
+    blurb: "rank them all. lowest pick gets eliminated round by round until someone has a majority.",
   },
 ];
 

@@ -29,8 +29,8 @@ export function TempPasswordModal({
           >
             <p className="font-display mb-1 text-lg text-gold">temp password ready 🔑</p>
             <p className="mb-4 text-sm text-white/50">
-              share this with <span className="font-semibold text-white/80">{result.username}</span> —
-              it won&apos;t be shown again. they&apos;ll have to set a real one on their next login.
+              share this with <span className="font-semibold text-white/80">{result.username}</span>.
+              it won&apos;t be shown again, and they&apos;ll have to set a real one on their next login.
             </p>
             <div className="mb-5 select-all rounded-xl border border-gold/40 bg-black/40 px-4 py-3 text-center font-mono text-lg tracking-wider text-gold">
               {result.tempPassword}

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { REACTION_EMOJI, type HistoryEntry, type PublicState as State, type Restaurant } from "@/lib/types";
+import { REACTION_EMOJI, type PublicState as State, type Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
-import { RestaurantVault } from "./RestaurantVault";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 import { ConfirmModal } from "./ConfirmModal";
 
 export function SubmissionPhase({
@@ -20,10 +20,8 @@ export function SubmissionPhase({
 }) {
   const mine = state.restaurants.find((r) => r.submittedBy === username);
   const myUser = state.users.find((u) => u.username === username);
-  const [name, setName] = useState(mine?.name ?? "");
-  const [url, setUrl] = useState(mine?.url ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [picking, setPicking] = useState<string | null>(null);
   const [passing, setPassing] = useState(false);
   const [overridePass, setOverridePass] = useState(false);
   const [editing, setEditing] = useState<Restaurant | null>(null);
@@ -32,9 +30,15 @@ export function SubmissionPhase({
   const [removingMine, setRemovingMine] = useState(false);
   const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
   const [togglingNotComing, setTogglingNotComing] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
 
   const notComing = Boolean(myUser?.notComing);
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
+  const pickedElsewhere = new Set(
+    state.restaurants
+      .filter((r) => r.submittedBy !== username)
+      .map((r) => r.name.trim().toLowerCase())
+  );
 
   async function setNotComing(value: boolean) {
     setError(null);
@@ -52,21 +56,20 @@ export function SubmissionPhase({
       }
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setTogglingNotComing(false);
     }
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function pick(historyId: string) {
     setError(null);
-    setLoading(true);
+    setPicking(historyId);
     try {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, url }),
+        body: JSON.stringify({ historyId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -75,17 +78,10 @@ export function SubmissionPhase({
       }
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
-      setLoading(false);
+      setPicking(null);
     }
-  }
-
-  function pickFromVault(entry: HistoryEntry) {
-    setName(entry.name);
-    setUrl(entry.url);
-    setOverridePass(true);
-    setError(null);
   }
 
   async function confirmDeleteRestaurant() {
@@ -115,11 +111,9 @@ export function SubmissionPhase({
         setError(data.error ?? "something went wrong");
         return;
       }
-      setName("");
-      setUrl("");
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setRemovingMine(false);
     }
@@ -152,7 +146,7 @@ export function SubmissionPhase({
       }
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setPassing(false);
     }
@@ -172,17 +166,25 @@ export function SubmissionPhase({
       <ConfirmModal
         open={pendingDelete !== null}
         title="remove this pick?"
-        message={`${pendingDelete?.name} comes off the table — ${pendingDelete?.submittedBy} can submit a new one.`}
+        message={`${pendingDelete?.name} comes off the table. ${pendingDelete?.submittedBy} can pick again.`}
         confirmLabel="remove it"
         onConfirm={confirmDeleteRestaurant}
         onCancel={() => setPendingDelete(null)}
       />
+      <AddRestaurantModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        onAdded={() => {
+          setShowAdd(false);
+          onChanged();
+        }}
+      />
       <div className="felt-panel neon-border rounded-3xl p-6">
         {notComing ? (
           <>
-            <h2 className="font-display mb-1 text-xl text-gold">Spectating this round 🙅</h2>
+            <h2 className="font-display mb-1 text-xl text-gold">Spectating this round</h2>
             <p className="mb-5 text-sm text-white/50">
-              you&apos;re marked as not coming — no need to submit or vote. you can still see
+              you&apos;re marked as not coming. no need to submit or vote, you can still see
               what everyone else picks below.
             </p>
             {error && (
@@ -203,7 +205,7 @@ export function SubmissionPhase({
               <>
                 <h2 className="font-display mb-1 text-xl text-gold">Sitting this one out</h2>
                 <p className="mb-5 text-sm text-white/50">
-                  no pick from you this round — but you&apos;ll still need to vote once voting
+                  no pick from you this round, but you&apos;ll still need to vote once voting
                   opens.
                 </p>
                 {error && (
@@ -221,51 +223,77 @@ export function SubmissionPhase({
               </>
             ) : (
               <>
-                <h2 className="font-display mb-1 text-xl text-gold">
-                  {mine ? "Update your pick" : "Submit a restaurant"}
-                </h2>
-                <p className="mb-5 text-sm text-white/50">
-                  one pick per person — you can change it anytime before voting starts.
-                </p>
-                <form onSubmit={submit}>
-                  <label className="mb-1 block text-sm font-semibold text-gold/90">
-                    Restaurant name
-                  </label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Big Jon's Pizza"
-                    required
-                    className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
-                  />
-                  <label className="mb-1 block text-sm font-semibold text-gold/90">Menu URL</label>
-                  <input
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://..."
-                    required
-                    type="url"
-                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
-                  />
-                  <p className="mb-5 text-xs text-white/40">
-                    link the menu so everyone can scope it out.
-                  </p>
-
-                  {error && (
-                    <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
-                      {error}
-                    </p>
-                  )}
-
-                  <motion.button
-                    type="submit"
-                    disabled={loading}
-                    whileTap={{ scale: 0.96 }}
-                    className="chip-btn w-full py-3 font-display text-lg"
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <h2 className="font-display text-xl text-gold">
+                    {mine ? "Update your pick" : "Pick a restaurant"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdd(true)}
+                    aria-label="add a restaurant"
+                    title="add a restaurant"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-base font-semibold text-gold transition hover:bg-gold/25"
                   >
-                    {loading ? "SAVING…" : mine ? "UPDATE MY PICK" : "SUBMIT MY PICK"}
-                  </motion.button>
-                </form>
+                    +
+                  </button>
+                </div>
+                <p className="mb-5 text-sm text-white/50">
+                  one pick per person, straight from the restaurant list. you can change it
+                  anytime before voting starts.
+                </p>
+
+                {error && (
+                  <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
+                    {error}
+                  </p>
+                )}
+
+                {state.history.length === 0 ? (
+                  <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-white/40">
+                    no restaurants yet. add some from the Restaurants tab first.
+                  </p>
+                ) : (
+                  <div className="flex max-h-[360px] flex-wrap gap-2 overflow-y-auto pr-1">
+                    {state.history.map((entry) => {
+                      const taken = pickedElsewhere.has(entry.name.trim().toLowerCase());
+                      const selected = mine?.name.trim().toLowerCase() === entry.name.trim().toLowerCase();
+                      return (
+                        <div
+                          key={entry.id}
+                          className={`flex items-stretch overflow-hidden rounded-full border text-sm font-medium transition ${
+                            selected
+                              ? "!border-gold/70 !bg-gold/10 text-gold"
+                              : taken
+                                ? "border-white/5 text-white/30"
+                                : "border-white/10 bg-black/20"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => pick(entry.id)}
+                            disabled={taken || picking !== null}
+                            className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
+                          >
+                            {picking === entry.id ? "…" : entry.name}
+                          </button>
+                          <a
+                            href={entry.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`view ${entry.name} menu`}
+                            className={`flex items-center border-l px-3 py-2 text-xs transition ${
+                              selected
+                                ? "border-gold/30 text-gold/70 hover:text-gold"
+                                : "border-white/10 text-white/40 hover:bg-white/5 hover:text-sky"
+                            }`}
+                          >
+                            menu
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {!mine && (
                   <button
                     type="button"
@@ -273,7 +301,7 @@ export function SubmissionPhase({
                     disabled={passing}
                     className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm disabled:opacity-40"
                   >
-                    {passing ? "…" : "skip — no pick from me 🤷"}
+                    {passing ? "…" : "skip, no pick from me"}
                   </button>
                 )}
                 {mine && (
@@ -297,7 +325,7 @@ export function SubmissionPhase({
               disabled={togglingNotComing}
               className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
             >
-              {togglingNotComing ? "…" : "not coming this round? 🙅"}
+              {togglingNotComing ? "…" : "not coming this round?"}
             </button>
           </>
         )}
@@ -308,7 +336,7 @@ export function SubmissionPhase({
           Submitted so far ({state.restaurants.length})
         </h3>
         {state.restaurants.length === 0 ? (
-          <p className="text-white/40">nobody&apos;s dropped a pick yet — be the first.</p>
+          <p className="text-white/40">nobody&apos;s dropped a pick yet. be the first.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <AnimatePresence>
@@ -386,18 +414,6 @@ export function SubmissionPhase({
             </AnimatePresence>
           </div>
         )}
-      </div>
-
-      <div className="lg:col-span-2">
-        <RestaurantVault
-          history={state.history}
-          isAdmin={isAdmin}
-          currentNames={
-            new Set(state.restaurants.map((r) => r.name.trim().toLowerCase()))
-          }
-          onPick={pickFromVault}
-          onChanged={onChanged}
-        />
       </div>
     </div>
   );

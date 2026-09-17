@@ -28,14 +28,15 @@ export function NavShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-6xl flex-col lg:flex-row lg:gap-6 lg:px-4 lg:py-6">
-      {/* mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/5 bg-[#050f1f]/90 px-4 py-3 backdrop-blur-xl lg:hidden">
+    <div className="min-h-dvh">
+      {/* full-width brand banner, spans the whole page above the sidebar and content */}
+      <header className="bulb-border neon-border !fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-white/10 bg-[#050f1f]/90 px-4 backdrop-blur-xl sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="text-xl">🎰</span>
-          <h1 className="font-display neon-text truncate text-lg">FOOD FIGHT</h1>
+          <span className="text-2xl">🎰</span>
+          <h1 className="font-display neon-text truncate text-lg sm:text-xl">FOOD FIGHT</h1>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        {/* phase + logout live in the sidebar on desktop; mobile has no sidebar, so they surface here instead */}
+        <div className="flex shrink-0 items-center gap-2 lg:hidden">
           <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-sky/90">
             {phaseLabel}
           </span>
@@ -48,13 +49,9 @@ export function NavShell({
         </div>
       </header>
 
-      {/* desktop sidebar */}
-      <aside className="sticky top-6 hidden h-[calc(100dvh-3rem)] w-60 shrink-0 flex-col rounded-3xl border border-white/5 bg-[#050f1f]/70 p-4 backdrop-blur-xl lg:flex">
-        <div className="mb-1 flex items-center gap-2 px-2">
-          <span className="text-2xl">🎰</span>
-          <h1 className="font-display neon-text text-lg leading-tight">FOOD FIGHT</h1>
-        </div>
-        <div className="mb-5 flex flex-wrap gap-1.5 px-2">
+      {/* desktop sidebar — pinned to the true viewport edge, below the banner */}
+      <aside className="fixed inset-y-0 left-0 top-16 z-20 hidden w-56 flex-col border-r border-white/5 bg-[#050f1f]/80 p-4 backdrop-blur-xl lg:flex">
+        <div className="mb-5 flex flex-wrap gap-1.5">
           <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-sky/90">
             {phaseLabel}
           </span>
@@ -97,9 +94,11 @@ export function NavShell({
         </div>
       </aside>
 
-      {/* content */}
-      <main className="min-w-0 flex-1 px-4 py-6 pb-24 sm:py-8 lg:px-0 lg:py-0 lg:pb-0">
-        {children}
+      {/* content — offset past the top banner (all sizes) and the fixed sidebar (desktop) */}
+      <main className="pt-16 lg:pl-56">
+        <div className="mx-auto max-w-4xl px-4 pb-24 pt-4 sm:pb-8 sm:pt-6 lg:px-8 lg:pb-8 lg:pt-6">
+          {children}
+        </div>
       </main>
 
       {/* mobile bottom tab bar */}

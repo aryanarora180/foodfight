@@ -9,9 +9,11 @@ import { TempPasswordModal } from "./TempPasswordModal";
 
 export function AdminPanel({
   state,
+  username,
   onChanged,
 }: {
   state: PublicState;
+  username: string;
   onChanged: () => void;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
@@ -23,6 +25,16 @@ export function AdminPanel({
     username: string;
     tempPassword: string;
   } | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [confirmingKickAll, setConfirmingKickAll] = useState(false);
+  const [kickingAll, setKickingAll] = useState(false);
+  const [resettingPw, setResettingPw] = useState<string | null>(null);
+  const [pendingResetPw, setPendingResetPw] = useState<string | null>(null);
+  const [pwResult, setPwResult] = useState<{ username: string; tempPassword: string } | null>(
+    null
+  );
+  const [togglingNotComing, setTogglingNotComing] = useState<string | null>(null);
 
   async function call(path: string, key: string) {
     setError(null);
@@ -36,7 +48,7 @@ export function AdminPanel({
       }
       onChanged();
     } catch {
-      setError("network error");
+      setError("network error. try again.");
     } finally {
       setLoading(null);
     }
@@ -64,11 +76,75 @@ export function AdminPanel({
       setShowStartModal(false);
       onChanged();
     } catch {
-      setError("network error");
+      setError("network error. try again.");
     } finally {
       setLoading(null);
     }
   }
+
+  async function confirmRemove() {
+    const target = pendingRemove;
+    setPendingRemove(null);
+    if (!target) return;
+    setRemoving(target);
+    try {
+      await fetch("/api/admin/remove-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: target }),
+      });
+      onChanged();
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  async function confirmKickAll() {
+    setConfirmingKickAll(false);
+    setKickingAll(true);
+    try {
+      await fetch("/api/admin/remove-all-users", { method: "POST" });
+      onChanged();
+    } finally {
+      setKickingAll(false);
+    }
+  }
+
+  async function confirmResetPassword() {
+    const target = pendingResetPw;
+    setPendingResetPw(null);
+    if (!target) return;
+    setResettingPw(target);
+    try {
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: target }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwResult({ username: data.username, tempPassword: data.tempPassword });
+      }
+    } finally {
+      setResettingPw(null);
+    }
+  }
+
+  async function toggleNotComing(target: string, value: boolean) {
+    setTogglingNotComing(target);
+    try {
+      await fetch("/api/admin/set-not-coming", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: target, value }),
+      });
+      onChanged();
+    } finally {
+      setTogglingNotComing(null);
+    }
+  }
+
+  const nonAdminCount = state.users.filter((u) => !u.isAdmin).length;
 
   return (
     <div>
@@ -99,6 +175,31 @@ export function AdminPanel({
         }}
       />
       <TempPasswordModal result={tempPasswordResult} onClose={() => setTempPasswordResult(null)} />
+      <ConfirmModal
+        open={pendingRemove !== null}
+        title="kick them out?"
+        message={`${pendingRemove} loses their seat. picks and votes go with them.`}
+        confirmLabel="kick 'em"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
+      <ConfirmModal
+        open={confirmingKickAll}
+        title="kick everyone out?"
+        message="every non-admin seat gets wiped. accounts, picks, and votes, all of it. can't be undone."
+        confirmLabel="clear them all"
+        onConfirm={confirmKickAll}
+        onCancel={() => setConfirmingKickAll(false)}
+      />
+      <ConfirmModal
+        open={pendingResetPw !== null}
+        title="reset their password?"
+        message={`${pendingResetPw} gets a fresh temp password and has to set a new one on their next login.`}
+        confirmLabel="reset it"
+        onConfirm={confirmResetPassword}
+        onCancel={() => setPendingResetPw(null)}
+      />
+      <TempPasswordModal result={pwResult} onClose={() => setPwResult(null)} />
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
@@ -131,26 +232,85 @@ export function AdminPanel({
             )}
             {state.phase === "voting" && (
               <p className="text-xs text-white/40">
-                results drop on their own once everyone&apos;s voted — this forces it early.
+                results drop on their own once everyone&apos;s voted. this forces it early.
               </p>
             )}
             {state.phase === "results" && (
               <p className="text-xs text-white/40">
-                this round is decided — reset below to start a new one.
+                this round is decided. reset below to start a new one.
               </p>
             )}
           </div>
         </div>
 
         <div className="felt-panel rounded-2xl p-5">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">PEOPLE</p>
-          <button
-            onClick={() => setShowCreateUser(true)}
-            disabled={loading !== null}
-            className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
-          >
-            + create account
-          </button>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold tracking-wide text-sky/80">PEOPLE</p>
+            <div className="flex items-center gap-3">
+              {nonAdminCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingKickAll(true)}
+                  disabled={kickingAll}
+                  className="text-xs text-white/40 hover:text-red-300 disabled:opacity-40"
+                >
+                  {kickingAll ? "clearing…" : "kick everyone"}
+                </button>
+              )}
+              <button
+                onClick={() => setShowCreateUser(true)}
+                disabled={loading !== null}
+                className="chip-btn-ghost rounded-full px-4 py-1.5 text-xs"
+              >
+                + create account
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col divide-y divide-white/5">
+            {state.users.map((u) => {
+              const isSelf = u.username.toLowerCase() === username.toLowerCase();
+              return (
+                <div key={u.username} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {u.isAdmin && "👑 "}
+                      {u.username}
+                    </p>
+                    {u.notComing && <p className="text-xs text-white/30">not coming this round</p>}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => toggleNotComing(u.username, !u.notComing)}
+                      disabled={togglingNotComing === u.username}
+                      className="text-white/40 hover:text-sky disabled:opacity-40"
+                    >
+                      {u.notComing ? "count back in" : "mark not coming"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingResetPw(u.username)}
+                      disabled={resettingPw === u.username}
+                      className="text-white/40 hover:text-gold disabled:opacity-40"
+                    >
+                      reset password
+                    </button>
+                    {!isSelf && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemove(u.username)}
+                        disabled={removing === u.username}
+                        className="text-white/40 hover:text-red-300 disabled:opacity-40"
+                      >
+                        remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="felt-panel rounded-2xl p-5">

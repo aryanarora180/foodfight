@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import type { PublicState, RankedRound, Restaurant } from "@/lib/types";
 import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
+import { RankedChoiceFlowChart, rankedCandidateColors } from "./RankedChoiceFlowChart";
 
 const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
 const ROUND_STEP_MS = 1800;
@@ -44,6 +45,7 @@ function RankedRoundsPlayback({
   const round = rounds[roundIdx];
   const maxVotes = Math.max(1, ...round.counts.map((c) => c.votes));
   const isFinalRound = roundIdx === rounds.length - 1;
+  const colorFor = rankedCandidateColors(rounds);
   const eliminatedNames = round.eliminated
     .map((id) => restaurantById.get(id)?.name)
     .filter(Boolean)
@@ -86,11 +88,8 @@ function RankedRoundsPlayback({
                   </div>
                   <div className="h-3 overflow-hidden rounded-full bg-black/40">
                     <motion.div
-                      className={`h-full rounded-full ${
-                        eliminated
-                          ? "bg-white/20"
-                          : "bg-gradient-to-r from-royal via-indigo to-sky"
-                      }`}
+                      className={`h-full rounded-full ${eliminated ? "bg-white/20" : ""}`}
+                      style={eliminated ? undefined : { backgroundColor: colorFor.get(restaurantId) }}
                       initial={{ width: 0 }}
                       animate={{ width: `${(votes / maxVotes) * 100}%` }}
                       transition={{ duration: 0.6 }}
@@ -104,7 +103,7 @@ function RankedRoundsPlayback({
       </div>
       <p className="min-h-[1.25rem] text-sm text-white/50">
         {round.eliminated.length > 0
-          ? `${eliminatedNames} eliminated — votes shift to next choice.`
+          ? `${eliminatedNames} eliminated. votes shift to next choice.`
           : isFinalRound
             ? "someone cleared a majority of the remaining ballots."
             : " "}
@@ -267,6 +266,10 @@ export function ResultsPhase({ state }: { state: PublicState }) {
           <p className="text-white/50">no votes were cast.</p>
         )}
       </div>
+
+      {state.votingType === "ranked" && (state.rankedRounds?.length ?? 0) > 1 && (
+        <RankedChoiceFlowChart rounds={state.rankedRounds!} restaurantById={restaurantById} />
+      )}
 
       <div>
         <h3 className="font-display mb-1 text-lg text-sky">Final tally</h3>

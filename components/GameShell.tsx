@@ -9,6 +9,7 @@ import { ResultsPhase } from "./ResultsPhase";
 import { AdminPanel } from "./AdminPanel";
 import { RosterTicker } from "./RosterTicker";
 import { VaultTab } from "./VaultTab";
+import { HistoryTab } from "./HistoryTab";
 import { NavShell, type NavTab } from "./NavShell";
 
 const PHASE_LABEL: Record<string, string> = {
@@ -23,7 +24,7 @@ const VOTING_TYPE_BADGE: Record<string, string> = {
   ranked: "🏆 ranked choice",
 };
 
-type TabId = "play" | "vault" | "admin";
+type TabId = "vote" | "vault" | "history" | "admin";
 
 export function GameShell({
   username,
@@ -35,7 +36,7 @@ export function GameShell({
   onLogout: () => void;
 }) {
   const { state, mutate } = useGameState(true);
-  const [activeTab, setActiveTab] = useState<TabId>("play");
+  const [activeTab, setActiveTab] = useState<TabId>("vote");
 
   if (!state) {
     return (
@@ -46,11 +47,12 @@ export function GameShell({
   }
 
   const tabs: NavTab[] = [
-    { id: "play", label: "Play", icon: "🎰" },
-    { id: "vault", label: "Vault", icon: "🗄️" },
+    { id: "vote", label: "Vote", icon: "🎰" },
+    { id: "vault", label: "Restaurants", icon: "🍽️" },
+    { id: "history", label: "History", icon: "🏆" },
     ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "👑" }] : []),
   ];
-  const tab = isAdmin || activeTab !== "admin" ? activeTab : "play";
+  const tab = isAdmin || activeTab !== "admin" ? activeTab : "vote";
 
   return (
     <NavShell
@@ -63,16 +65,10 @@ export function GameShell({
       votingTypeLabel={state.phase !== "submission" ? VOTING_TYPE_BADGE[state.votingType] : null}
       onLogout={onLogout}
     >
-      {tab === "play" && (
+      {tab === "vote" && (
         <div>
           <div className="mb-6">
-            <RosterTicker
-              users={state.users}
-              phase={state.phase}
-              isAdmin={isAdmin}
-              username={username}
-              onChanged={() => mutate()}
-            />
+            <RosterTicker users={state.users} phase={state.phase} />
           </div>
 
           <AnimatePresence mode="wait">
@@ -104,7 +100,13 @@ export function GameShell({
         <VaultTab state={state} isAdmin={isAdmin} onChanged={() => mutate()} />
       )}
 
-      {tab === "admin" && isAdmin && <AdminPanel state={state} onChanged={() => mutate()} />}
+      {tab === "history" && (
+        <HistoryTab state={state} isAdmin={isAdmin} onChanged={() => mutate()} />
+      )}
+
+      {tab === "admin" && isAdmin && (
+        <AdminPanel state={state} username={username} onChanged={() => mutate()} />
+      )}
     </NavShell>
   );
 }

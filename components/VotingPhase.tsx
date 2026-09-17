@@ -8,16 +8,16 @@ import { SimpleVoteEditor } from "./SimpleVoteEditor";
 const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: string }> = {
   simple: {
     title: "Cast your vote",
-    blurb: "tap your one favorite — most votes wins.",
+    blurb: "tap your one favorite. most votes wins.",
   },
   points: {
     title: "Rank your choices",
-    blurb: "drag to reorder — top is your favorite. 1st place scores highest, points decide it.",
+    blurb: "drag to reorder. top is your favorite, 1st place scores highest, points decide it.",
   },
   ranked: {
     title: "Rank your choices",
     blurb:
-      "drag to reorder — top is your favorite. if nobody has a majority, the lowest pick gets eliminated and votes shift down.",
+      "drag to reorder. top is your favorite. if nobody has a majority, the lowest pick gets eliminated and votes shift down.",
   },
 };
 
@@ -59,7 +59,7 @@ export function VotingPhase({
       setEditing(false);
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +81,7 @@ export function VotingPhase({
       }
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setTogglingNotComing(false);
     }
@@ -91,7 +91,7 @@ export function VotingPhase({
     <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
       <div className="felt-panel neon-border rounded-3xl p-6">
         <h2 className="font-display mb-1 text-xl text-gold">
-          {notComing ? "Spectating this round 🙅" : copy.title}
+          {notComing ? "Spectating this round" : copy.title}
         </h2>
         {!notComing && <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>}
 
@@ -102,7 +102,7 @@ export function VotingPhase({
         {notComing ? (
           <div>
             <p className="mb-5 text-sm text-white/50">
-              you&apos;re marked as not coming — sit back, no vote needed from you.
+              you&apos;re marked as not coming. sit back, no vote needed from you.
             </p>
             <button
               type="button"
@@ -161,22 +161,12 @@ export function VotingPhase({
             disabled={togglingNotComing}
             className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
           >
-            {togglingNotComing ? "…" : "not coming this round? 🙅"}
+            {togglingNotComing ? "…" : "not coming this round?"}
           </button>
         )}
       </div>
 
       <div className="flex flex-col gap-6">
-        <div>
-          <h3 className="font-display mb-3 text-lg text-sky">Live odds 📊</h3>
-          <div className="felt-panel rounded-2xl p-6 text-center">
-            <p className="mb-2 text-3xl">🔒</p>
-            <p className="text-sm text-white/50">
-              odds stay sealed for everyone — even the house — until the reveal.
-            </p>
-          </div>
-        </div>
-
         <div>
           <h3 className="font-display mb-1 text-lg text-sky">
             Ballots so far ({state.votes.length}/{requiredVoters.length})
@@ -185,10 +175,7 @@ export function VotingPhase({
             results drop automatically the moment everyone&apos;s voted.
           </p>
           <div className="felt-panel rounded-2xl p-6 text-center">
-            <p className="mb-2 text-3xl">🔒</p>
-            <p className="text-sm text-white/50">
-              ballots stay sealed until the results drop — no peeking.
-            </p>
+            <p className="text-sm text-white/50">ballots stay hidden until results are in.</p>
           </div>
         </div>
       </div>

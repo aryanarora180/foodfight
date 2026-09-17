@@ -11,7 +11,7 @@ function topBy(entries: WinnerRecord[], keyFn: (w: WinnerRecord) => string) {
     const key = keyFn(w);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
 }
 
 export function WinnersLog({
@@ -48,7 +48,7 @@ export function WinnersLog({
       <div className="felt-panel rounded-2xl p-8 text-center">
         <p className="mb-1 text-3xl">🏆</p>
         <p className="text-sm text-white/50">
-          no winners crowned yet — finish a round to start the hall of fame.
+          no winners crowned yet. finish a round to start the hall of fame.
         </p>
       </div>
     );
@@ -70,35 +70,47 @@ export function WinnersLog({
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="felt-panel rounded-2xl p-4">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">
-            MOST WINS — RESTAURANT
+        <div className="felt-panel neon-border rounded-3xl p-6 text-center">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-sky/80">TOP RESTAURANT</p>
+          <p className="font-display neon-text truncate text-2xl sm:text-3xl">
+            {topRestaurants[0][0]}
           </p>
-          <div className="flex flex-col gap-2">
-            {topRestaurants.map(([name, count], idx) => (
-              <div key={name} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate">
-                  {medal(idx)} {name}
-                </span>
-                <span className="shrink-0 text-gold">{count}×</span>
-              </div>
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-white/50">
+            {topRestaurants[0][1]} win{topRestaurants[0][1] === 1 ? "" : "s"}
+          </p>
+          {topRestaurants.length > 1 && (
+            <div className="mt-4 flex flex-col gap-1 border-t border-white/5 pt-3 text-left">
+              {topRestaurants.slice(1).map(([name, count], idx) => (
+                <div key={name} className="flex items-center justify-between gap-2 text-xs text-white/50">
+                  <span className="truncate">
+                    {medal(idx + 1)} {name}
+                  </span>
+                  <span className="shrink-0 text-gold">{count}×</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="felt-panel rounded-2xl p-4">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">
-            MOST WINS — PICKED BY
+        <div className="felt-panel neon-border rounded-3xl p-6 text-center">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-sky/80">TOP PICKER</p>
+          <p className="font-display neon-text truncate text-2xl sm:text-3xl">
+            {topSubmitters[0][0]}
           </p>
-          <div className="flex flex-col gap-2">
-            {topSubmitters.map(([name, count], idx) => (
-              <div key={name} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate">
-                  {medal(idx)} {name}
-                </span>
-                <span className="shrink-0 text-gold">{count}×</span>
-              </div>
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-white/50">
+            {topSubmitters[0][1]} win{topSubmitters[0][1] === 1 ? "" : "s"}
+          </p>
+          {topSubmitters.length > 1 && (
+            <div className="mt-4 flex flex-col gap-1 border-t border-white/5 pt-3 text-left">
+              {topSubmitters.slice(1).map(([name, count], idx) => (
+                <div key={name} className="flex items-center justify-between gap-2 text-xs text-white/50">
+                  <span className="truncate">
+                    {medal(idx + 1)} {name}
+                  </span>
+                  <span className="shrink-0 text-gold">{count}×</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

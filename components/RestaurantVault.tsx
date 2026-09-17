@@ -8,17 +8,11 @@ import { ConfirmModal } from "./ConfirmModal";
 export function RestaurantVault({
   history,
   isAdmin,
-  currentNames,
-  onPick,
   onChanged,
-  readOnly = false,
 }: {
   history: HistoryEntry[];
   isAdmin: boolean;
-  currentNames: Set<string>;
-  onPick: (entry: HistoryEntry) => void;
   onChanged: () => void;
-  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState<HistoryEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<HistoryEntry | null>(null);
@@ -35,7 +29,7 @@ export function RestaurantVault({
       await fetch("/api/admin/delete-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: entry.username }),
+        body: JSON.stringify({ id: entry.id }),
       });
       onChanged();
     } finally {
@@ -56,52 +50,36 @@ export function RestaurantVault({
       <ConfirmModal
         open={pendingDelete !== null}
         title="forget this pick?"
-        message={`${pendingDelete?.name} gets wiped from the vault for good.`}
+        message={`${pendingDelete?.name} gets wiped from the list for good.`}
         confirmLabel="forget it"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
-      {!readOnly && (
-        <>
-          <h3 className="font-display mb-1 text-lg text-sky">The vault 🗄️</h3>
-          <p className="mb-3 text-xs text-white/40">
-            old favorites, ready to bring back with one click.
-          </p>
-        </>
-      )}
-      <div className="flex flex-wrap gap-2">
-        {history.map((entry) => {
-          const inPlay = currentNames.has(entry.name.trim().toLowerCase());
-          return (
-            <div
-              key={entry.username}
-              className="felt-panel flex items-center gap-2 rounded-full py-1.5 pl-4 pr-2 text-sm"
-            >
-              {readOnly ? (
-                <span className="font-medium">
-                  {entry.name}
-                  <span className="ml-1.5 text-xs text-white/40">— {entry.username}</span>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onPick(entry)}
-                  disabled={inPlay}
-                  title={
-                    inPlay ? `${entry.name} is already on the table this round` : `use ${entry.name}`
-                  }
-                  className="font-medium disabled:cursor-not-allowed disabled:text-white/30"
-                >
-                  {entry.name}
-                  <span className="ml-1.5 text-xs text-white/40">— {entry.username}</span>
-                </button>
-              )}
+      <div className="flex flex-col gap-1">
+        {history.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-1.5 text-sm"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{entry.name}</p>
+              <p className="truncate text-xs text-white/40">added by {entry.username}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3 text-xs">
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sky/70 underline"
+              >
+                menu
+              </a>
               {isAdmin && (
-                <span className="flex items-center gap-1 border-l border-white/10 pl-2">
+                <>
                   <button
                     type="button"
                     onClick={() => setEditing(entry)}
-                    aria-label={`edit ${entry.name} in vault`}
+                    aria-label={`edit ${entry.name}`}
                     className="text-white/40 hover:text-gold"
                   >
                     ✎
@@ -110,16 +88,16 @@ export function RestaurantVault({
                     type="button"
                     onClick={() => setPendingDelete(entry)}
                     disabled={deleting}
-                    aria-label={`delete ${entry.name} from vault`}
+                    aria-label={`delete ${entry.name}`}
                     className="text-white/40 hover:text-red-300 disabled:opacity-40"
                   >
                     🗑
                   </button>
-                </span>
+                </>
               )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

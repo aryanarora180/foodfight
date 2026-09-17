@@ -38,7 +38,7 @@ function EditRestaurantForm({
       }
       onSaved();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setSaving(false);
     }
@@ -55,7 +55,7 @@ function EditRestaurantForm({
     >
       <p className="font-display mb-1 text-lg text-gold">edit this pick</p>
       <p className="mb-4 text-xs text-white/40">
-        {selfService ? "update your details below" : `submitted by ${restaurant.submittedBy} — admin override`}
+        {selfService ? "update your details below" : `submitted by ${restaurant.submittedBy}. editing as admin.`}
       </p>
       <form onSubmit={save}>
         <label className="mb-1 block text-sm font-semibold text-gold/90">Restaurant name</label>

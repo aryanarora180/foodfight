@@ -39,7 +39,7 @@ export function ChangePasswordScreen({
       }
       onChanged();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export function ChangePasswordScreen({
 
         <form onSubmit={submit} className="felt-panel neon-border rounded-3xl p-6 sm:p-8">
           <p className="mb-5 text-sm text-white/50">
-            that temp password only works once — pick a real one before you go any further.
+            that temp password only works once. pick a real one before you go any further.
           </p>
 
           <label className="mb-1 block text-sm font-semibold text-gold/90">

@@ -9,17 +9,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "admins only" }, { status: 403 });
   }
   const body = await req.json().catch(() => null);
-  const username = typeof body?.username === "string" ? body.username : null;
-  if (!username) {
-    return NextResponse.json({ error: "username required" }, { status: 400 });
+  const id = typeof body?.id === "string" ? body.id : null;
+  if (!id) {
+    return NextResponse.json({ error: "vault entry id required" }, { status: 400 });
   }
-  const key = username.toLowerCase();
 
   const { state, result } = await updateState((state) => {
-    if (!state.restaurantHistory[key]) {
+    if (!state.restaurantHistory[id]) {
       return { error: "no such vault entry" as const };
     }
-    delete state.restaurantHistory[key];
+    delete state.restaurantHistory[id];
     return { ok: true as const };
   });
 

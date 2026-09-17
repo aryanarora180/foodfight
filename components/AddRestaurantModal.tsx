@@ -3,23 +3,23 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export function CreateUserModal({
+export function AddRestaurantModal({
   open,
   onClose,
-  onCreated,
+  onAdded,
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: (result: { username: string; tempPassword: string }) => void;
+  onAdded: () => void;
 }) {
-  const [username, setUsername] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   function close() {
-    setUsername("");
-    setIsAdmin(false);
+    setName("");
+    setUrl("");
     setError(null);
     onClose();
   }
@@ -27,25 +27,25 @@ export function CreateUserModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setSaving(true);
     try {
-      const res = await fetch("/api/admin/create-user", {
+      const res = await fetch("/api/add-suggestion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, isAdmin }),
+        body: JSON.stringify({ name, url }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "something went wrong");
         return;
       }
-      onCreated({ username: data.username, tempPassword: data.tempPassword });
-      setUsername("");
-      setIsAdmin(false);
+      setName("");
+      setUrl("");
+      onAdded();
     } catch {
       setError("network error. try again.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
@@ -68,27 +68,30 @@ export function CreateUserModal({
             className="felt-panel neon-border w-full max-w-sm rounded-3xl p-6"
           >
             <form onSubmit={submit}>
-              <p className="font-display mb-1 text-lg text-gold">create an account</p>
+              <p className="font-display mb-1 text-lg text-gold">add a restaurant</p>
               <p className="mb-4 text-xs text-white/40">
-                generates a temp password they&apos;ll be forced to change on their first login.
+                goes straight into the shared list. anyone can pick it for a future round.
               </p>
-              <label className="mb-1 block text-sm font-semibold text-gold/90">Username</label>
+              <label className="mb-1 block text-sm font-semibold text-gold/90">
+                Restaurant name
+              </label>
               <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="hungry_hippo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Big Jon's Pizza"
                 required
                 autoFocus
                 className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
               />
-              <label className="mb-4 flex items-center gap-2 text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  checked={isAdmin}
-                  onChange={(e) => setIsAdmin(e.target.checked)}
-                />
-                make them an admin too
-              </label>
+              <label className="mb-1 block text-sm font-semibold text-gold/90">Menu URL</label>
+              <input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://..."
+                required
+                type="url"
+                className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
+              />
               {error && (
                 <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
                   {error}
@@ -104,10 +107,10 @@ export function CreateUserModal({
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={saving}
                   className="chip-btn rounded-full px-5 py-2 text-sm disabled:opacity-40"
                 >
-                  {loading ? "creating…" : "create"}
+                  {saving ? "adding…" : "add"}
                 </button>
               </div>
             </form>

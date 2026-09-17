@@ -27,6 +27,7 @@ export interface UserRecord {
 }
 
 export interface HistoryEntry {
+  id: string;
   username: string;
   name: string;
   url: string;

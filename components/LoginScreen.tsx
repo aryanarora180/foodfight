@@ -26,7 +26,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
       }
       onLoggedIn();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setLoading(false);
     }

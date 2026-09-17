@@ -26,7 +26,7 @@ function EditHistoryForm({
       const res = await fetch("/api/admin/edit-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: entry.username, name, url }),
+        body: JSON.stringify({ id: entry.id, name, url }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -35,7 +35,7 @@ function EditHistoryForm({
       }
       onSaved();
     } catch {
-      setError("network error — try again");
+      setError("network error. try again.");
     } finally {
       setSaving(false);
     }
@@ -50,8 +50,8 @@ function EditHistoryForm({
       onClick={(e) => e.stopPropagation()}
       className="felt-panel neon-border w-full max-w-sm rounded-3xl p-6"
     >
-      <p className="font-display mb-1 text-lg text-gold">edit vault entry</p>
-      <p className="mb-4 text-xs text-white/40">remembered from {entry.username} — admin override</p>
+      <p className="font-display mb-1 text-lg text-gold">edit restaurant</p>
+      <p className="mb-4 text-xs text-white/40">added by {entry.username}. editing as admin.</p>
       <form onSubmit={save}>
         <label className="mb-1 block text-sm font-semibold text-gold/90">Restaurant name</label>
         <input
@@ -111,7 +111,7 @@ export function EditHistoryModal({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
           onClick={onCancel}
         >
-          <EditHistoryForm key={entry.username} entry={entry} onSaved={onSaved} onCancel={onCancel} />
+          <EditHistoryForm key={entry.id} entry={entry} onSaved={onSaved} onCancel={onCancel} />
         </motion.div>
       )}
     </AnimatePresence>
