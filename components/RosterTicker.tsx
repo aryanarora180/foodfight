@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Phase, PublicUser } from "@/lib/types";
 import { ConfirmModal } from "./ConfirmModal";
 import { TempPasswordModal } from "./TempPasswordModal";
@@ -29,6 +30,21 @@ export function RosterTicker({
   );
   const [togglingNotComing, setTogglingNotComing] = useState<string | null>(null);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!openMenuFor) return;
+    function closeMenu() {
+      setOpenMenuFor(null);
+      setMenuPos(null);
+    }
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, [openMenuFor]);
 
   if (users.length === 0) return null;
   const label = phase === "submission" ? "locked in a pick" : "voted";
@@ -37,6 +53,7 @@ export function RosterTicker({
   const doneCount = active.filter((u) => (phase === "submission" ? u.hasSubmitted : u.hasVoted))
     .length;
   const nonAdminCount = users.filter((u) => !u.isAdmin).length;
+  const menuUser = openMenuFor ? users.find((u) => u.username === openMenuFor) : null;
 
   async function confirmRemove() {
     const target = pendingRemove;
@@ -100,11 +117,25 @@ export function RosterTicker({
     }
   }
 
+  function closeMenu() {
+    setOpenMenuFor(null);
+    setMenuPos(null);
+  }
+
+  function toggleMenu(e: React.MouseEvent<HTMLButtonElement>, target: string) {
+    if (openMenuFor === target) {
+      closeMenu();
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = 192;
+    setMenuPos({ top: rect.bottom + 4, left: Math.max(8, rect.right - width) });
+    setOpenMenuFor(target);
+  }
+
   function renderTile(u: PublicUser) {
     const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
     const passed = phase === "submission" && u.passedSubmission;
-    const isSelf = u.username.toLowerCase() === username.toLowerCase();
-    const menuOpen = openMenuFor === u.username;
     const statusText = u.notComing
       ? "not coming 🙅"
       : passed
@@ -116,7 +147,7 @@ export function RosterTicker({
     return (
       <div
         key={u.username}
-        className={`relative flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
+        className={`flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
           u.notComing
             ? "border-white/5 bg-white/[0.03] opacity-60"
             : done
@@ -134,7 +165,7 @@ export function RosterTicker({
           {isAdmin && (
             <button
               type="button"
-              onClick={() => setOpenMenuFor(menuOpen ? null : u.username)}
+              onClick={(e) => toggleMenu(e, u.username)}
               aria-label={`actions for ${u.username}`}
               className="shrink-0 rounded-md px-1 leading-none text-white/40 hover:bg-white/10 hover:text-white/80"
             >
@@ -155,49 +186,6 @@ export function RosterTicker({
         >
           {statusText}
         </span>
-
-        {menuOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuFor(null)} />
-            <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-lg border border-white/10 bg-[#0b1c33] py-1 shadow-xl">
-              <button
-                type="button"
-                onClick={() => {
-                  toggleNotComing(u.username, !u.notComing);
-                  setOpenMenuFor(null);
-                }}
-                disabled={togglingNotComing === u.username}
-                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
-              >
-                {u.notComing ? "↩️ count back in" : "🙅 mark as not coming"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingResetPw(u.username);
-                  setOpenMenuFor(null);
-                }}
-                disabled={resettingPw === u.username}
-                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
-              >
-                🔑 reset password
-              </button>
-              {!isSelf && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingRemove(u.username);
-                    setOpenMenuFor(null);
-                  }}
-                  disabled={removing === u.username}
-                  className="block w-full px-3 py-2 text-left text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-40"
-                >
-                  × remove from round
-                </button>
-              )}
-            </div>
-          </>
-        )}
       </div>
     );
   }
@@ -254,6 +242,55 @@ export function RosterTicker({
           <div className="flex flex-wrap gap-2">{notComingUsers.map(renderTile)}</div>
         </div>
       )}
+
+      {menuUser &&
+        menuPos &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={closeMenu} />
+            <div
+              className="fixed z-50 w-48 overflow-hidden rounded-lg border border-white/10 bg-[#0b1c33] py-1 shadow-xl"
+              style={{ top: menuPos.top, left: menuPos.left }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  toggleNotComing(menuUser.username, !menuUser.notComing);
+                  closeMenu();
+                }}
+                disabled={togglingNotComing === menuUser.username}
+                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
+              >
+                {menuUser.notComing ? "↩️ count back in" : "🙅 mark as not coming"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingResetPw(menuUser.username);
+                  closeMenu();
+                }}
+                disabled={resettingPw === menuUser.username}
+                className="block w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 disabled:opacity-40"
+              >
+                🔑 reset password
+              </button>
+              {menuUser.username.toLowerCase() !== username.toLowerCase() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingRemove(menuUser.username);
+                    closeMenu();
+                  }}
+                  disabled={removing === menuUser.username}
+                  className="block w-full px-3 py-2 text-left text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-40"
+                >
+                  × remove from round
+                </button>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

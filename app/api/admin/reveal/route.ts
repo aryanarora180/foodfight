@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { updateState } from "@/lib/store";
-import { toPublicState } from "@/lib/gameLogic";
+import { recordWinner, toPublicState } from "@/lib/gameLogic";
 
 export async function POST() {
   const session = await getSession();
@@ -13,6 +13,7 @@ export async function POST() {
       return { error: "not currently voting" as const };
     }
     state.phase = "results";
+    recordWinner(state);
     return { ok: true as const };
   });
   if ("error" in result) {

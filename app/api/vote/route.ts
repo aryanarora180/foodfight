@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { updateState } from "@/lib/store";
-import { toPublicState } from "@/lib/gameLogic";
+import { recordWinner, toPublicState } from "@/lib/gameLogic";
 
 const schema = z.object({
   order: z.array(z.string()).min(1),
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     );
     if (everyoneVoted) {
       state.phase = "results";
+      recordWinner(state);
     }
     return { ok: true as const };
   });

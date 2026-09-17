@@ -11,12 +11,14 @@ export function RestaurantVault({
   currentNames,
   onPick,
   onChanged,
+  readOnly = false,
 }: {
   history: HistoryEntry[];
   isAdmin: boolean;
   currentNames: Set<string>;
   onPick: (entry: HistoryEntry) => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState<HistoryEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<HistoryEntry | null>(null);
@@ -59,10 +61,14 @@ export function RestaurantVault({
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
-      <h3 className="font-display mb-1 text-lg text-sky">The vault 🗄️</h3>
-      <p className="mb-3 text-xs text-white/40">
-        old favorites, ready to bring back with one click.
-      </p>
+      {!readOnly && (
+        <>
+          <h3 className="font-display mb-1 text-lg text-sky">The vault 🗄️</h3>
+          <p className="mb-3 text-xs text-white/40">
+            old favorites, ready to bring back with one click.
+          </p>
+        </>
+      )}
       <div className="flex flex-wrap gap-2">
         {history.map((entry) => {
           const inPlay = currentNames.has(entry.name.trim().toLowerCase());
@@ -71,16 +77,25 @@ export function RestaurantVault({
               key={entry.username}
               className="felt-panel flex items-center gap-2 rounded-full py-1.5 pl-4 pr-2 text-sm"
             >
-              <button
-                type="button"
-                onClick={() => onPick(entry)}
-                disabled={inPlay}
-                title={inPlay ? `${entry.name} is already on the table this round` : `use ${entry.name}`}
-                className="font-medium disabled:cursor-not-allowed disabled:text-white/30"
-              >
-                {entry.name}
-                <span className="ml-1.5 text-xs text-white/40">— {entry.username}</span>
-              </button>
+              {readOnly ? (
+                <span className="font-medium">
+                  {entry.name}
+                  <span className="ml-1.5 text-xs text-white/40">— {entry.username}</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onPick(entry)}
+                  disabled={inPlay}
+                  title={
+                    inPlay ? `${entry.name} is already on the table this round` : `use ${entry.name}`
+                  }
+                  className="font-medium disabled:cursor-not-allowed disabled:text-white/30"
+                >
+                  {entry.name}
+                  <span className="ml-1.5 text-xs text-white/40">— {entry.username}</span>
+                </button>
+              )}
               {isAdmin && (
                 <span className="flex items-center gap-1 border-l border-white/10 pl-2">
                   <button

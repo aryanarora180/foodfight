@@ -197,93 +197,108 @@ export function SubmissionPhase({
               {togglingNotComing ? "…" : "actually, count me in"}
             </button>
           </>
-        ) : showPassedCard ? (
+        ) : (
           <>
-            <h2 className="font-display mb-1 text-xl text-gold">Sitting this one out</h2>
-            <p className="mb-5 text-sm text-white/50">
-              no pick from you this round — but you&apos;ll still need to vote once voting opens.
-            </p>
-            {error && (
-              <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+            {showPassedCard ? (
+              <>
+                <h2 className="font-display mb-1 text-xl text-gold">Sitting this one out</h2>
+                <p className="mb-5 text-sm text-white/50">
+                  no pick from you this round — but you&apos;ll still need to vote once voting
+                  opens.
+                </p>
+                {error && (
+                  <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOverridePass(true)}
+                  className="chip-btn-ghost w-full rounded-full py-2.5 text-sm"
+                >
+                  actually, let me pick something
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="font-display mb-1 text-xl text-gold">
+                  {mine ? "Update your pick" : "Submit a restaurant"}
+                </h2>
+                <p className="mb-5 text-sm text-white/50">
+                  one pick per person — you can change it anytime before voting starts.
+                </p>
+                <form onSubmit={submit}>
+                  <label className="mb-1 block text-sm font-semibold text-gold/90">
+                    Restaurant name
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Big Jon's Pizza"
+                    required
+                    className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
+                  />
+                  <label className="mb-1 block text-sm font-semibold text-gold/90">Menu URL</label>
+                  <input
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://..."
+                    required
+                    type="url"
+                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
+                  />
+                  <p className="mb-5 text-xs text-white/40">
+                    link the menu so everyone can scope it out.
+                  </p>
+
+                  {error && (
+                    <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
+                      {error}
+                    </p>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    whileTap={{ scale: 0.96 }}
+                    className="chip-btn w-full py-3 font-display text-lg"
+                  >
+                    {loading ? "SAVING…" : mine ? "UPDATE MY PICK" : "SUBMIT MY PICK"}
+                  </motion.button>
+                </form>
+                {!mine && (
+                  <button
+                    type="button"
+                    onClick={pass}
+                    disabled={passing}
+                    className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm disabled:opacity-40"
+                  >
+                    {passing ? "…" : "skip — no pick from me 🤷"}
+                  </button>
+                )}
+                {mine && (
+                  <button
+                    type="button"
+                    onClick={removeMyPick}
+                    disabled={removingMine}
+                    className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
+                  >
+                    {removingMine ? "removing…" : "remove my pick"}
+                  </button>
+                )}
+                <p className="mt-2 text-center text-xs text-white/30">
+                  you&apos;ll still need to vote once voting opens, pick or no pick.
+                </p>
+              </>
             )}
             <button
               type="button"
-              onClick={() => setOverridePass(true)}
-              className="chip-btn-ghost w-full rounded-full py-2.5 text-sm"
+              onClick={() => setNotComing(true)}
+              disabled={togglingNotComing}
+              className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
             >
-              actually, let me pick something
+              {togglingNotComing ? "…" : "not coming this round? 🙅"}
             </button>
-          </>
-        ) : (
-          <>
-            <h2 className="font-display mb-1 text-xl text-gold">
-              {mine ? "Update your pick" : "Submit a restaurant"}
-            </h2>
-            <p className="mb-5 text-sm text-white/50">
-              one pick per person — you can change it anytime before voting starts.
-            </p>
-            <form onSubmit={submit}>
-              <label className="mb-1 block text-sm font-semibold text-gold/90">
-                Restaurant name
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Big Jon's Pizza"
-                required
-                className="mb-4 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
-              />
-              <label className="mb-1 block text-sm font-semibold text-gold/90">Menu URL</label>
-              <input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://..."
-                required
-                type="url"
-                className="mb-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-gold/60"
-              />
-              <p className="mb-5 text-xs text-white/40">
-                link the menu so everyone can scope it out.
-              </p>
-
-              {error && (
-                <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
-                  {error}
-                </p>
-              )}
-
-              <motion.button
-                type="submit"
-                disabled={loading}
-                whileTap={{ scale: 0.96 }}
-                className="chip-btn w-full py-3 font-display text-lg"
-              >
-                {loading ? "SAVING…" : mine ? "UPDATE MY PICK" : "SUBMIT MY PICK"}
-              </motion.button>
-            </form>
-            {!mine && (
-              <button
-                type="button"
-                onClick={pass}
-                disabled={passing}
-                className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm disabled:opacity-40"
-              >
-                {passing ? "…" : "skip — no pick from me 🤷"}
-              </button>
-            )}
-            {mine && (
-              <button
-                type="button"
-                onClick={removeMyPick}
-                disabled={removingMine}
-                className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
-              >
-                {removingMine ? "removing…" : "remove my pick"}
-              </button>
-            )}
-            <p className="mt-2 text-center text-xs text-white/30">
-              you&apos;ll still need to vote once voting opens, pick or no pick.
-            </p>
           </>
         )}
       </div>

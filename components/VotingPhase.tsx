@@ -154,6 +154,16 @@ export function VotingPhase({
             </button>
           </div>
         )}
+        {!notComing && (
+          <button
+            type="button"
+            onClick={() => setNotComing(true)}
+            disabled={togglingNotComing}
+            className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
+          >
+            {togglingNotComing ? "…" : "not coming this round? 🙅"}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-6">

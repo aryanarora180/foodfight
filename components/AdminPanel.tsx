@@ -71,7 +71,10 @@ export function AdminPanel({
   }
 
   return (
-    <div className="bulb-border felt-panel neon-border rounded-3xl p-5">
+    <div>
+      <h2 className="font-display mb-1 text-2xl text-gold">Admin 👑</h2>
+      <p className="mb-6 text-sm text-white/50">round controls and account management.</p>
+
       <ConfirmModal
         open={confirmingReset}
         title="reset everything?"
@@ -96,51 +99,73 @@ export function AdminPanel({
         }}
       />
       <TempPasswordModal result={tempPasswordResult} onClose={() => setTempPasswordResult(null)} />
-      <p className="font-display mb-3 text-sm tracking-wide text-royal">👑 ADMIN CONTROLS</p>
+
       {error && (
-        <p className="mb-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+        <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        {state.phase === "submission" && (
+
+      <div className="flex flex-col gap-4">
+        <div className="felt-panel rounded-2xl p-5">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">ROUND</p>
+          <div className="flex flex-wrap items-center gap-3">
+            {state.phase === "submission" && (
+              <button
+                onClick={() => setShowStartModal(true)}
+                disabled={loading !== null || state.restaurants.length < 2}
+                className="chip-btn px-5 py-2.5 text-sm"
+              >
+                START VOTING 🗳️
+              </button>
+            )}
+            {state.phase === "voting" && (
+              <button
+                onClick={() => call("/api/admin/reveal", "reveal")}
+                disabled={loading !== null}
+                className="chip-btn px-5 py-2.5 text-sm"
+              >
+                {loading === "reveal" ? "REVEALING…" : "REVEAL RESULTS 🏆"}
+              </button>
+            )}
+            {state.phase === "submission" && state.restaurants.length < 2 && (
+              <p className="text-xs text-white/40">need at least 2 picks before voting can start.</p>
+            )}
+            {state.phase === "voting" && (
+              <p className="text-xs text-white/40">
+                results drop on their own once everyone&apos;s voted — this forces it early.
+              </p>
+            )}
+            {state.phase === "results" && (
+              <p className="text-xs text-white/40">
+                this round is decided — reset below to start a new one.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="felt-panel rounded-2xl p-5">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">PEOPLE</p>
           <button
-            onClick={() => setShowStartModal(true)}
-            disabled={loading !== null || state.restaurants.length < 2}
-            className="chip-btn px-5 py-2.5 text-sm"
-          >
-            START VOTING 🗳️
-          </button>
-        )}
-        {state.phase === "voting" && (
-          <button
-            onClick={() => call("/api/admin/reveal", "reveal")}
+            onClick={() => setShowCreateUser(true)}
             disabled={loading !== null}
-            className="chip-btn px-5 py-2.5 text-sm"
+            className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
           >
-            {loading === "reveal" ? "REVEALING…" : "REVEAL RESULTS 🏆"}
+            + create account
           </button>
-        )}
-        <button
-          onClick={() => setShowCreateUser(true)}
-          disabled={loading !== null}
-          className="chip-btn-ghost rounded-full px-5 py-2.5 text-sm"
-        >
-          + create account
-        </button>
-        {state.phase === "submission" && state.restaurants.length < 2 && (
-          <p className="text-xs text-white/40">need at least 2 picks before voting can start.</p>
-        )}
-        {state.phase === "voting" && (
-          <p className="text-xs text-white/40">
-            results drop on their own once everyone&apos;s voted — this forces it early.
+        </div>
+
+        <div className="felt-panel rounded-2xl p-5">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-red-300/70">DANGER ZONE</p>
+          <button
+            onClick={() => setConfirmingReset(true)}
+            disabled={loading !== null}
+            className="rounded-full border border-red-500/20 px-5 py-2.5 text-sm text-red-300/80 transition hover:border-red-500/40 hover:text-red-300 disabled:opacity-40"
+          >
+            {loading === "reset" ? "resetting…" : "reset everything ↺"}
+          </button>
+          <p className="mt-2 text-xs text-white/30">
+            clears all picks and votes and returns to submissions. accounts and history stay put.
           </p>
-        )}
-        <button
-          onClick={() => setConfirmingReset(true)}
-          disabled={loading !== null}
-          className="ml-auto rounded-full px-3 py-1.5 text-xs text-white/40 transition hover:text-red-300 disabled:opacity-40"
-        >
-          {loading === "reset" ? "resetting…" : "reset everything ↺"}
-        </button>
+        </div>
       </div>
     </div>
   );

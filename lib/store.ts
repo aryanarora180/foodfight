@@ -14,6 +14,7 @@ function emptyState(): GameState {
     users: {},
     passes: {},
     restaurantHistory: {},
+    winnerHistory: [],
     updatedAt: Date.now(),
   };
 }

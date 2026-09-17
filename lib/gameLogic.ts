@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import type { GameState, PublicState, PublicUser, RankedRound, ScoreEntry, VotingType } from "./types";
 
 export const MIN_RESTAURANTS_TO_VOTE = 2;
@@ -153,6 +154,27 @@ export function computeResults(state: GameState): ResultsComputation {
   return computePointsResults(state);
 }
 
+// call once, right when a round's phase flips from voting to results — logs
+// a clear (non-tie) winner to the permanent hall-of-fame history.
+export function recordWinner(state: GameState): void {
+  const { scores, winnerId, tie } = computeResults(state);
+  if (tie || !winnerId) return;
+  const winner = scores.find((s) => s.restaurant.id === winnerId);
+  if (!winner) return;
+  state.winnerHistory.push({
+    id: nanoid(8),
+    restaurantId: winner.restaurant.id,
+    name: winner.restaurant.name,
+    url: winner.restaurant.url,
+    submittedBy: winner.restaurant.submittedBy,
+    votingType: state.votingType,
+    points: winner.points,
+    firstPlaceVotes: winner.firstPlaceVotes,
+    participantCount: Object.keys(state.votes).length,
+    decidedAt: Date.now(),
+  });
+}
+
 export function toPublicState(state: GameState): PublicState {
   const { scores, winnerId, tie, rounds } = computeResults(state);
   const winner = scores.find((s) => s.restaurant.id === winnerId) ?? null;
@@ -176,6 +198,8 @@ export function toPublicState(state: GameState): PublicState {
     a.name.localeCompare(b.name)
   );
 
+  const winnerHistory = [...state.winnerHistory].sort((a, b) => b.decidedAt - a.decidedAt);
+
   return {
     phase: state.phase,
     votingType: state.votingType,
@@ -188,6 +212,7 @@ export function toPublicState(state: GameState): PublicState {
       state.phase === "results" && state.votingType === "ranked" ? (rounds ?? []) : null,
     users,
     history,
+    winnerHistory,
     updatedAt: state.updatedAt,
   };
 }

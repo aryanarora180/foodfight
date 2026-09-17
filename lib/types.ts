@@ -33,6 +33,19 @@ export interface HistoryEntry {
   updatedAt: number;
 }
 
+export interface WinnerRecord {
+  id: string;
+  restaurantId: string;
+  name: string;
+  url: string;
+  submittedBy: string;
+  votingType: VotingType;
+  points: number;
+  firstPlaceVotes: number;
+  participantCount: number;
+  decidedAt: number;
+}
+
 export interface VoteRecord {
   username: string;
   order: string[];
@@ -47,6 +60,7 @@ export interface GameState {
   users: Record<string, UserRecord>;
   passes: Record<string, boolean>;
   restaurantHistory: Record<string, HistoryEntry>;
+  winnerHistory: WinnerRecord[];
   updatedAt: number;
 }
 
@@ -76,5 +90,6 @@ export interface PublicState {
   rankedRounds: RankedRound[] | null;
   users: PublicUser[];
   history: HistoryEntry[];
+  winnerHistory: WinnerRecord[];
   updatedAt: number;
 }

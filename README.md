@@ -4,6 +4,21 @@ A gamified, slot-machine-themed lunch picker for your team. Everyone submits one
 restaurant, the group votes in whatever format the admin picks, and the house
 reveals a winner — confetti and drama included.
 
+## Navigation
+
+The app is organized into a few sections — a sidebar on desktop, a bottom tab
+bar on mobile (same idea as a Mac app's sidebar collapsing to an iPhone tab
+bar):
+- **Play** 🎰 — the live round: roster, and whichever phase is active
+  (submit / vote / results). This is home base.
+- **Vault** 🗄️ — stats & history, not gameplay. Two sub-tabs: **Winners** (the
+  hall of fame — see below) and **Suggestions** (every restaurant anyone's
+  ever submitted, browsable but read-only here). To actually submit or reuse
+  a pick for the *current* round, that stays on Play, right in the submission
+  panel.
+- **Admin** 👑 — admin-only. Round controls, account management, and the
+  reset button, out of everyone else's way.
+
 ## Features
 
 ### Accounts & auth
@@ -19,7 +34,8 @@ reveals a winner — confetti and drama included.
   land. You can update your pick, or **remove it entirely** and go back to
   square one, any time before voting starts.
 - **The vault 🗄️** — every restaurant anyone has ever submitted is saved to a
-  shared history. One click re-submits an old favorite instead of retyping it.
+  shared history and shown right here for one-click reuse. The same list also
+  shows up (read-only, for browsing) on the Vault tab.
 - **Reactions** — react to any pick with 🔥 😍 🤢 👀. No limit — mash the same
   emoji as many times as you want, just for fun. Counts update live for
   everyone.
@@ -55,17 +71,27 @@ reveal.** No peeking, no strategic voting.
 - Either way: confetti, a crown, the final tally, and every ballot, visible to
   everyone.
 - Ties are called out explicitly instead of picking a fake winner.
+- The moment a round resolves with a clear winner, it's logged permanently —
+  see **Hall of fame** below.
+
+### Hall of fame (Vault → Winners)
+Every round that resolves with a clear (non-tied) winner gets logged forever:
+restaurant, who submitted it, the voting format, the score, and the date.
+The Winners tab shows that full history plus a quick leaderboard — most wins
+by restaurant, most wins by whoever submitted it — because bragging rights
+matter. Admins can remove a bad entry; nothing else can touch it. Unlike
+round state, this history is never cleared by "reset everything."
 
 ### Admin controls
-- Start voting (pick the format), or force an early reveal.
-- Create accounts (hands back a one-time temp password) and reset anyone's
-  password.
-- Kick an individual user, or clear every non-admin seat at once — both ask
-  for confirmation first.
-- Edit or delete any submitted restaurant, or any vault/history entry.
-- Reset everything — clears picks and votes and returns to the submission
-  phase, but keeps accounts and vault history. Tucked away as a small,
-  deliberately low-key control so it doesn't compete with the buttons you
+Its own tab (Admin 👑, admin-only), grouped like a settings page:
+- **Round** — start voting (pick the format), or force an early reveal.
+- **People** — create accounts (hands back a one-time temp password). Kicking
+  a user or resetting their password happens from that person's `⋯` menu on
+  the Play tab's roster instead, since it's about a specific person in the
+  current round.
+- **Danger zone** — reset everything: clears picks and votes and returns to
+  the submission phase, but keeps accounts, vault history, and the hall of
+  fame. Visually set apart so it doesn't compete with the buttons you
   actually want to press.
 
 ### Live roster
@@ -76,10 +102,10 @@ person gets their own tile with a plainly-readable status (`voted ✓`,
 stays readable even with a full roster.
 
 ### Spectating
-A **"not coming?"** pill sits right in the header, next to your name, on
-every screen — the one place to mark yourself out. Toggle it on and you
-become a pure spectator: no need to submit or vote, and you're pulled out of
-the "everyone's in" / "everyone's voted" counts so you can't accidentally
+A **"not coming this round? 🙅"** link sits right in the submission and
+voting panels on Play — the one place to mark yourself out. Toggle it on and
+you become a pure spectator: no need to submit or vote, and you're pulled out
+of the "everyone's in" / "everyone's voted" counts so you can't accidentally
 hold up the round. You still see everything everyone else does — submitted
 picks, and results once they drop — just like an active participant, with no
 elevated visibility into sealed odds. Not-coming users get their own section
