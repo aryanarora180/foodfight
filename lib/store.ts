@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import Redis from "ioredis";
-import type { GameState } from "./types";
+import { nanoid } from "nanoid";
+import type { GameState, HistoryEntry } from "./types";
 
 const STATE_KEY = "foodfight:state";
 
@@ -48,12 +49,33 @@ function writeFileState(state: GameState) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
 }
 
+// pre-refactor restaurantHistory was keyed by username with no `id` field on
+// each entry; backfill ids and re-key by id so old data keeps working with
+// code that now looks entries up by id. Idempotent — a no-op once migrated.
+function migrateHistory(state: GameState): boolean {
+  let changed = false;
+  const migrated: Record<string, HistoryEntry> = {};
+  for (const [key, entry] of Object.entries(state.restaurantHistory ?? {})) {
+    const id = entry.id ?? nanoid(8);
+    if (id !== key || !entry.id) changed = true;
+    migrated[id] = { ...entry, id };
+  }
+  if (changed) state.restaurantHistory = migrated;
+  return changed;
+}
+
 export async function getState(): Promise<GameState> {
+  let state: GameState;
   if (redis) {
     const raw = await redis.get(STATE_KEY);
-    return raw ? { ...emptyState(), ...(JSON.parse(raw) as GameState) } : emptyState();
+    state = raw ? { ...emptyState(), ...(JSON.parse(raw) as GameState) } : emptyState();
+  } else {
+    state = readFileState();
   }
-  return readFileState();
+  if (migrateHistory(state)) {
+    await setState(state);
+  }
+  return state;
 }
 
 export async function setState(state: GameState): Promise<void> {
