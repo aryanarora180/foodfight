@@ -11,8 +11,12 @@ export async function POST() {
   const username = session.username;
 
   const { state, result } = await updateState((state) => {
-    if (!state.users[username.toLowerCase()]) {
+    const record = state.users[username.toLowerCase()];
+    if (!record) {
       return { error: "you've been removed from this round" as const };
+    }
+    if (record.notComing) {
+      return { error: "you're marked as not coming this round" as const };
     }
     if (state.phase !== "submission") {
       return { error: "submissions are closed" as const };

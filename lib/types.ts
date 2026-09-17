@@ -23,6 +23,7 @@ export interface UserRecord {
   createdAt: number;
   passwordHash?: string;
   mustChangePassword?: boolean;
+  notComing?: boolean;
 }
 
 export interface HistoryEntry {
@@ -55,6 +56,7 @@ export interface PublicUser {
   hasSubmitted: boolean;
   passedSubmission: boolean;
   hasVoted: boolean;
+  notComing: boolean;
 }
 
 export interface ScoreEntry {

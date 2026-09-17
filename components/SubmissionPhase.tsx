@@ -31,8 +31,32 @@ export function SubmissionPhase({
   const [deleting, setDeleting] = useState<string | null>(null);
   const [removingMine, setRemovingMine] = useState(false);
   const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
+  const [togglingNotComing, setTogglingNotComing] = useState(false);
 
+  const notComing = Boolean(myUser?.notComing);
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
+
+  async function setNotComing(value: boolean) {
+    setError(null);
+    setTogglingNotComing(true);
+    try {
+      const res = await fetch("/api/not-coming", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "something went wrong");
+        return;
+      }
+      onChanged();
+    } catch {
+      setError("network error — try again");
+    } finally {
+      setTogglingNotComing(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,7 +178,26 @@ export function SubmissionPhase({
         onCancel={() => setPendingDelete(null)}
       />
       <div className="felt-panel neon-border rounded-3xl p-6">
-        {showPassedCard ? (
+        {notComing ? (
+          <>
+            <h2 className="font-display mb-1 text-xl text-gold">Spectating this round 🙅</h2>
+            <p className="mb-5 text-sm text-white/50">
+              you&apos;re marked as not coming — no need to submit or vote. you can still see
+              what everyone else picks below.
+            </p>
+            {error && (
+              <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+            )}
+            <button
+              type="button"
+              onClick={() => setNotComing(false)}
+              disabled={togglingNotComing}
+              className="chip-btn-ghost w-full rounded-full py-2.5 text-sm disabled:opacity-40"
+            >
+              {togglingNotComing ? "…" : "actually, count me in"}
+            </button>
+          </>
+        ) : showPassedCard ? (
           <>
             <h2 className="font-display mb-1 text-xl text-gold">Sitting this one out</h2>
             <p className="mb-5 text-sm text-white/50">

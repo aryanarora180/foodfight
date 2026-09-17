@@ -14,6 +14,9 @@ export async function POST() {
     state.restaurants = [];
     state.votes = {};
     state.passes = {};
+    for (const user of Object.values(state.users)) {
+      delete user.notComing;
+    }
     return { ok: true as const };
   });
   return NextResponse.json({ state: toPublicState(state) });

@@ -31,12 +31,16 @@ export function VotingPhase({
   onChanged: () => void;
 }) {
   const myVote = state.votes.find((v) => v.username === username);
+  const myUser = state.users.find((u) => u.username === username);
+  const notComing = Boolean(myUser?.notComing);
   const [editing, setEditing] = useState(!myVote);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [togglingNotComing, setTogglingNotComing] = useState(false);
 
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const copy = HEADER_COPY[state.votingType];
+  const requiredVoters = state.users.filter((u) => !u.notComing);
 
   async function submitVote(order: string[]) {
     setError(null);
@@ -61,17 +65,55 @@ export function VotingPhase({
     }
   }
 
+  async function setNotComing(value: boolean) {
+    setError(null);
+    setTogglingNotComing(true);
+    try {
+      const res = await fetch("/api/not-coming", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "something went wrong");
+        return;
+      }
+      onChanged();
+    } catch {
+      setError("network error — try again");
+    } finally {
+      setTogglingNotComing(false);
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
       <div className="felt-panel neon-border rounded-3xl p-6">
-        <h2 className="font-display mb-1 text-xl text-gold">{copy.title}</h2>
-        <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>
+        <h2 className="font-display mb-1 text-xl text-gold">
+          {notComing ? "Spectating this round 🙅" : copy.title}
+        </h2>
+        {!notComing && <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>}
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
         )}
 
-        {editing ? (
+        {notComing ? (
+          <div>
+            <p className="mb-5 text-sm text-white/50">
+              you&apos;re marked as not coming — sit back, no vote needed from you.
+            </p>
+            <button
+              type="button"
+              onClick={() => setNotComing(false)}
+              disabled={togglingNotComing}
+              className="chip-btn-ghost w-full rounded-full py-2.5 text-sm disabled:opacity-40"
+            >
+              {togglingNotComing ? "…" : "actually, count me in"}
+            </button>
+          </div>
+        ) : editing ? (
           state.votingType === "simple" ? (
             <SimpleVoteEditor
               restaurants={state.restaurants}
@@ -127,7 +169,7 @@ export function VotingPhase({
 
         <div>
           <h3 className="font-display mb-1 text-lg text-sky">
-            Ballots so far ({state.votes.length}/{state.users.length})
+            Ballots so far ({state.votes.length}/{requiredVoters.length})
           </h3>
           <p className="mb-3 text-xs text-white/40">
             results drop automatically the moment everyone&apos;s voted.

@@ -21,8 +21,12 @@ export async function POST(req: NextRequest) {
 
   const username = session.username;
   const { state, result } = await updateState((state) => {
-    if (!state.users[username.toLowerCase()]) {
+    const record = state.users[username.toLowerCase()];
+    if (!record) {
       return { error: "you've been removed from this round" as const };
+    }
+    if (record.notComing) {
+      return { error: "you're marked as not coming this round" as const };
     }
     if (state.phase !== "voting") {
       return { error: "voting is not open" as const };
@@ -45,7 +49,9 @@ export async function POST(req: NextRequest) {
       };
     }
     state.votes[username] = { username, order, votedAt: Date.now() };
-    const everyoneVoted = Object.values(state.users).every((u) => Boolean(state.votes[u.username]));
+    const everyoneVoted = Object.values(state.users).every(
+      (u) => u.notComing || Boolean(state.votes[u.username])
+    );
     if (everyoneVoted) {
       state.phase = "results";
     }

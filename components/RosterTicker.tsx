@@ -27,12 +27,13 @@ export function RosterTicker({
   const [pwResult, setPwResult] = useState<{ username: string; tempPassword: string } | null>(
     null
   );
+  const [togglingNotComing, setTogglingNotComing] = useState<string | null>(null);
 
   if (users.length === 0) return null;
   const label = phase === "submission" ? "locked in a pick" : "voted";
-  const doneCount = users.filter((u) =>
-    phase === "submission" ? u.hasSubmitted : u.hasVoted
-  ).length;
+  const counted = users.filter((u) => !u.notComing);
+  const doneCount = counted.filter((u) => (phase === "submission" ? u.hasSubmitted : u.hasVoted))
+    .length;
   const nonAdminCount = users.filter((u) => !u.isAdmin).length;
 
   async function confirmRemove() {
@@ -83,6 +84,23 @@ export function RosterTicker({
     }
   }
 
+  async function toggleNotComing(target: string, value: boolean) {
+    setTogglingNotComing(target);
+    try {
+      const isSelf = target.toLowerCase() === username.toLowerCase();
+      const endpoint = isSelf ? "/api/not-coming" : "/api/admin/set-not-coming";
+      const body = isSelf ? { value } : { username: target, value };
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      onChanged();
+    } finally {
+      setTogglingNotComing(null);
+    }
+  }
+
   return (
     <div className="felt-panel rounded-2xl px-4 py-3">
       <ConfirmModal
@@ -112,7 +130,7 @@ export function RosterTicker({
       <TempPasswordModal result={pwResult} onClose={() => setPwResult(null)} />
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold tracking-wide text-sky/80">
-          WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{users.length})
+          WHO&apos;S {phase === "submission" ? "IN" : "VOTED"} ({doneCount}/{counted.length})
         </p>
         {isAdmin && nonAdminCount > 0 && (
           <button
@@ -130,16 +148,24 @@ export function RosterTicker({
           const done = phase === "submission" ? u.hasSubmitted : u.hasVoted;
           const passed = phase === "submission" && u.passedSubmission;
           const isSelf = u.username.toLowerCase() === username.toLowerCase();
-          const statusText = passed ? "sitting out 🤷" : done ? `${label} ✓` : "waiting …";
+          const statusText = u.notComing
+            ? "not coming 🙅"
+            : passed
+              ? "sitting out 🤷"
+              : done
+                ? `${label} ✓`
+                : "waiting …";
           return (
             <div
               key={u.username}
               className={`flex min-w-[112px] flex-col gap-1 rounded-xl border px-3 py-2 ${
-                done
-                  ? "border-win/30 bg-win/10"
-                  : passed
-                    ? "border-gold/25 bg-gold/5"
-                    : "border-white/10 bg-white/5"
+                u.notComing
+                  ? "border-white/5 bg-white/[0.03] opacity-60"
+                  : done
+                    ? "border-win/30 bg-win/10"
+                    : passed
+                      ? "border-gold/25 bg-gold/5"
+                      : "border-white/10 bg-white/5"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -147,33 +173,57 @@ export function RosterTicker({
                   {u.isAdmin && "👑"}
                   {u.username}
                 </span>
-                {isAdmin && (
-                  <span className="flex shrink-0 items-center gap-1">
+                <span className="flex shrink-0 items-center gap-1">
+                  {(isSelf || isAdmin) && (
                     <button
                       type="button"
-                      onClick={() => setPendingResetPw(u.username)}
-                      disabled={resettingPw === u.username}
-                      aria-label={`reset ${u.username}'s password`}
-                      className="leading-none text-white/40 hover:text-gold disabled:opacity-40"
+                      onClick={() => toggleNotComing(u.username, !u.notComing)}
+                      disabled={togglingNotComing === u.username}
+                      aria-label={
+                        u.notComing ? `count ${u.username} back in` : `mark ${u.username} as not coming`
+                      }
+                      title={u.notComing ? "count back in" : "mark as not coming"}
+                      className="leading-none text-white/40 hover:text-sky disabled:opacity-40"
                     >
-                      🔑
+                      {u.notComing ? "↩️" : "🙅"}
                     </button>
-                    {!isSelf && (
+                  )}
+                  {isAdmin && (
+                    <>
                       <button
                         type="button"
-                        onClick={() => setPendingRemove(u.username)}
-                        disabled={removing === u.username}
-                        aria-label={`remove ${u.username}`}
-                        className="leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
+                        onClick={() => setPendingResetPw(u.username)}
+                        disabled={resettingPw === u.username}
+                        aria-label={`reset ${u.username}'s password`}
+                        className="leading-none text-white/40 hover:text-gold disabled:opacity-40"
                       >
-                        ×
+                        🔑
                       </button>
-                    )}
-                  </span>
-                )}
+                      {!isSelf && (
+                        <button
+                          type="button"
+                          onClick={() => setPendingRemove(u.username)}
+                          disabled={removing === u.username}
+                          aria-label={`remove ${u.username}`}
+                          className="leading-none text-white/40 hover:text-red-300 disabled:opacity-40"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </>
+                  )}
+                </span>
               </div>
               <span
-                className={`text-xs ${done ? "text-win" : passed ? "text-gold/80" : "text-white/40"}`}
+                className={`text-xs ${
+                  u.notComing
+                    ? "text-white/30"
+                    : done
+                      ? "text-win"
+                      : passed
+                        ? "text-gold/80"
+                        : "text-white/40"
+                }`}
               >
                 {statusText}
               </span>

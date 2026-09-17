@@ -167,6 +167,7 @@ export function toPublicState(state: GameState): PublicState {
           state.restaurants.some((r) => r.submittedBy === u.username) || passedSubmission,
         passedSubmission,
         hasVoted: Boolean(state.votes[u.username]),
+        notComing: Boolean(u.notComing),
       };
     })
     .sort((a, b) => a.username.localeCompare(b.username));
