@@ -30,8 +30,15 @@ if (!hasRedis && process.env.NODE_ENV === "production") {
   );
 }
 
+// overridable so the behavior-test suite can point at its own scratch file
+// without touching a developer's real local `.data/state.json` — the
+// directory segment stays a literal ".data" (only the filename varies) so
+// bundlers can statically scope filesystem tracing to that folder instead
+// of tracing the whole project
 const DATA_DIR = path.join(process.cwd(), ".data");
-const DATA_FILE = path.join(DATA_DIR, "state.json");
+const DATA_FILE = process.env.FOODFIGHT_DATA_FILE
+  ? path.join(DATA_DIR, path.basename(process.env.FOODFIGHT_DATA_FILE))
+  : path.join(DATA_DIR, "state.json");
 
 function readFileState(): GameState {
   try {
