@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { PublicState } from "@/lib/types";
 import { RankingEditor } from "./RankingEditor";
 import { SimpleVoteEditor } from "./SimpleVoteEditor";
+import { dodgyNameSet } from "@/lib/rodeoGoat";
 
 const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: string }> = {
   simple: {
@@ -40,6 +41,7 @@ export function VotingPhase({
 
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const copy = HEADER_COPY[state.votingType];
+  const dodgyNames = dodgyNameSet(state.history);
   const requiredVoters = state.users.filter((u) => !u.notComing);
 
   async function submitVote(order: string[]) {
@@ -120,13 +122,24 @@ export function VotingPhase({
               initialPick={myVote?.order[0] ?? null}
               onSubmit={(id) => submitVote([id])}
               submitting={submitting}
+              dodgyNames={dodgyNames}
             />
           ) : (
             <RankingEditor
               restaurants={state.restaurants}
-              initialOrder={myVote?.order ?? state.restaurants.map((r) => r.id)}
+              initialOrder={
+                myVote?.order ?? [
+                  ...state.restaurants
+                    .filter((r) => !dodgyNames.has(r.name.trim().toLowerCase()))
+                    .map((r) => r.id),
+                  ...state.restaurants
+                    .filter((r) => dodgyNames.has(r.name.trim().toLowerCase()))
+                    .map((r) => r.id),
+                ]
+              }
               onSubmit={submitVote}
               submitting={submitting}
+              dodgyNames={dodgyNames}
             />
           )
         ) : (

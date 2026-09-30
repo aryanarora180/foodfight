@@ -6,6 +6,9 @@ import { REACTION_EMOJI, type PublicState as State, type Restaurant } from "@/li
 import { EditRestaurantModal } from "./EditRestaurantModal";
 import { AddRestaurantModal } from "./AddRestaurantModal";
 import { ConfirmModal } from "./ConfirmModal";
+import { RodeoGoatModal } from "./RodeoGoatModal";
+import { DodgyGoatChip } from "./DodgyGoatChip";
+import { isDodgy } from "@/lib/rodeoGoat";
 
 export function SubmissionPhase({
   state,
@@ -31,6 +34,7 @@ export function SubmissionPhase({
   const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
   const [togglingNotComing, setTogglingNotComing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showGoat, setShowGoat] = useState(false);
 
   const notComing = Boolean(myUser?.notComing);
   const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
@@ -76,6 +80,8 @@ export function SubmissionPhase({
         setError(data.error ?? "something went wrong");
         return;
       }
+      const entry = state.history.find((h) => h.id === historyId);
+      if (entry && isDodgy(entry)) setShowGoat(true);
       onChanged();
     } catch {
       setError("network error. try again.");
@@ -171,6 +177,7 @@ export function SubmissionPhase({
         onConfirm={confirmDeleteRestaurant}
         onCancel={() => setPendingDelete(null)}
       />
+      <RodeoGoatModal open={showGoat} onClose={() => setShowGoat(false)} />
       <AddRestaurantModal
         open={showAdd}
         onClose={() => setShowAdd(false)}
@@ -268,14 +275,23 @@ export function SubmissionPhase({
                                 : "border-white/10 bg-black/20"
                           }`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => pick(entry.id)}
-                            disabled={taken || picking !== null}
-                            className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
-                          >
-                            {picking === entry.id ? "…" : entry.name}
-                          </button>
+                          {isDodgy(entry) && !taken && !selected ? (
+                            <DodgyGoatChip
+                              entry={entry}
+                              onPick={() => pick(entry.id)}
+                              disabled={picking !== null}
+                              busy={picking === entry.id}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => pick(entry.id)}
+                              disabled={taken || picking !== null}
+                              className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
+                            >
+                              {picking === entry.id ? "…" : entry.name}
+                            </button>
+                          )}
                           <a
                             href={entry.url}
                             target="_blank"

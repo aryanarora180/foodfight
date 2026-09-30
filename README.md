@@ -51,6 +51,15 @@ size, the same way a Mac app's sidebar collapses to an iPhone tab bar:
 - Admins can edit or delete any entry from the Restaurants tab; deleting an
   entry only removes it from the shared list, it doesn't touch anyone's
   current pick or the hall of fame.
+- **The Rodeo Goat treatment.** Admins can flag any restaurant with the 🐐
+  toggle on the Restaurants tab. A flagged place runs away from the cursor
+  in the pick list (it gives up after 8 dodges, and on touch the first 8
+  taps make it run instead of picking), pops up "pls not again😭😭😭" when
+  someone does pick it, starts at the bottom of every ranking, and floods
+  the screen with 💩 and "boo not <name>" if a voter moves it into their top
+  3 (or picks it in a simple vote). Rodeo Goat is flagged by default until an
+  admin turns it off; the flag lives on the list entry (`dodgy` on
+  `HistoryEntry`) and survives round resets.
 
 ### Submission phase
 - One pick per person, straight from the restaurant list. Picks are public

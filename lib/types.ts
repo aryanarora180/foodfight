@@ -32,6 +32,9 @@ export interface HistoryEntry {
   name: string;
   url: string;
   updatedAt: number;
+  // Admin-controlled: this place runs from the cursor and nags voters.
+  // Unset means the default (on for Rodeo Goat, off for everything else).
+  dodgy?: boolean;
 }
 
 export interface WinnerRecord {

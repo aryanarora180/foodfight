@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Reorder } from "framer-motion";
 import type { Restaurant } from "@/lib/types";
+import { PoopStorm } from "./PoopStorm";
 
 const MEDALS = ["🥇", "🥈", "🥉", "🎗️", "🎗️", "🎗️", "🎗️", "🎗️"];
 
@@ -11,16 +12,35 @@ export function RankingEditor({
   initialOrder,
   onSubmit,
   submitting,
+  dodgyNames,
   ctaLabel = "LOCK IN MY VOTES 🔒",
 }: {
   restaurants: Restaurant[];
   initialOrder: string[];
   onSubmit: (order: string[]) => void;
   submitting: boolean;
+  dodgyNames: Set<string>;
   ctaLabel?: string;
 }) {
   const byId = new Map(restaurants.map((r) => [r.id, r]));
   const [order, setOrder] = useState<string[]>(initialOrder);
+  const [booed, setBooed] = useState<string | null>(null);
+  const dragStartOrder = useRef<string[] | null>(null);
+
+  const isDodgyId = (id: string) => {
+    const r = byId.get(id);
+    return Boolean(r && dodgyNames.has(r.name.trim().toLowerCase()));
+  };
+
+  // Boo when a dodgy place climbs into the top 3 (and isn't just sitting last
+  // on a short list, where "last" is still top 3).
+  function checkBoo(prev: string[], next: string[]) {
+    const climbed = next.find(
+      (id, idx) =>
+        idx < 3 && idx < next.length - 1 && isDodgyId(id) && idx < prev.indexOf(id)
+    );
+    if (climbed) setBooed(climbed);
+  }
 
   function move(idx: number, dir: -1 | 1) {
     const next = [...order];
@@ -28,10 +48,25 @@ export function RankingEditor({
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
     setOrder(next);
+    checkBoo(order, next);
+  }
+
+  function moveToLast(id: string) {
+    setOrder([...order.filter((x) => x !== id), id]);
   }
 
   return (
     <div>
+      <PoopStorm
+        open={booed !== null}
+        name={booed ? (byId.get(booed)?.name ?? "") : ""}
+        primaryLabel="move it to last"
+        onPrimary={() => {
+          if (booed) moveToLast(booed);
+          setBooed(null);
+        }}
+        onDismiss={() => setBooed(null)}
+      />
       <Reorder.Group
         axis="y"
         values={order}
@@ -46,6 +81,13 @@ export function RankingEditor({
               key={id}
               value={id}
               whileDrag={{ scale: 1.03, boxShadow: "0 14px 32px rgba(0,0,0,0.55)" }}
+              onDragStart={() => {
+                dragStartOrder.current = order;
+              }}
+              onDragEnd={() => {
+                if (dragStartOrder.current) checkBoo(dragStartOrder.current, order);
+                dragStartOrder.current = null;
+              }}
               className="felt-panel flex cursor-grab items-center gap-3 rounded-2xl px-4 py-3 active:cursor-grabbing sm:gap-4"
             >
               <span className="w-9 shrink-0 text-center text-2xl">

@@ -2,31 +2,50 @@
 
 import { useState } from "react";
 import type { Restaurant } from "@/lib/types";
+import { PoopStorm } from "./PoopStorm";
 
 export function SimpleVoteEditor({
   restaurants,
   initialPick,
   onSubmit,
   submitting,
+  dodgyNames,
 }: {
   restaurants: Restaurant[];
   initialPick: string | null;
   onSubmit: (id: string) => void;
   submitting: boolean;
+  dodgyNames: Set<string>;
 }) {
   const [selected, setSelected] = useState<string | null>(initialPick);
+  const [booed, setBooed] = useState<string | null>(null);
+
+  function choose(r: Restaurant) {
+    if (r.id !== selected && dodgyNames.has(r.name.trim().toLowerCase())) setBooed(r.id);
+    setSelected(r.id);
+  }
 
   return (
     <div>
+      <PoopStorm
+        open={booed !== null}
+        name={restaurants.find((r) => r.id === booed)?.name ?? ""}
+        primaryLabel="pick something else"
+        onPrimary={() => {
+          setSelected(null);
+          setBooed(null);
+        }}
+        onDismiss={() => setBooed(null)}
+      />
       <div className="flex flex-col gap-3">
         {restaurants.map((r) => (
           <div
             key={r.id}
             role="button"
             tabIndex={0}
-            onClick={() => setSelected(r.id)}
+            onClick={() => choose(r)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setSelected(r.id);
+              if (e.key === "Enter" || e.key === " ") choose(r);
             }}
             className={`felt-panel cursor-pointer rounded-2xl border px-4 py-3 text-left transition ${
               selected === r.id

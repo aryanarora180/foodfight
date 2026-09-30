@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { HistoryEntry } from "@/lib/types";
 import { EditHistoryModal } from "./EditHistoryModal";
 import { ConfirmModal } from "./ConfirmModal";
+import { isDodgy } from "@/lib/rodeoGoat";
 
 export function RestaurantVault({
   history,
@@ -17,6 +18,7 @@ export function RestaurantVault({
   const [editing, setEditing] = useState<HistoryEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<HistoryEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingDodgy, setTogglingDodgy] = useState<string | null>(null);
 
   if (history.length === 0) return null;
 
@@ -34,6 +36,20 @@ export function RestaurantVault({
       onChanged();
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function toggleDodgy(entry: HistoryEntry) {
+    setTogglingDodgy(entry.id);
+    try {
+      await fetch("/api/admin/set-dodgy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: entry.id, value: !isDodgy(entry) }),
+      });
+      onChanged();
+    } finally {
+      setTogglingDodgy(null);
     }
   }
 
@@ -76,6 +92,24 @@ export function RestaurantVault({
               </a>
               {isAdmin && (
                 <>
+                  <button
+                    type="button"
+                    onClick={() => toggleDodgy(entry)}
+                    disabled={togglingDodgy === entry.id}
+                    aria-pressed={isDodgy(entry)}
+                    title={
+                      isDodgy(entry)
+                        ? "runs from the cursor. tap to turn off."
+                        : "make it run from the cursor"
+                    }
+                    className={`rounded-full border px-2 py-0.5 transition disabled:opacity-40 ${
+                      isDodgy(entry)
+                        ? "border-gold/60 bg-gold/15 text-gold"
+                        : "border-white/10 text-white/30 grayscale hover:text-white/60"
+                    }`}
+                  >
+                    🐐 {isDodgy(entry) ? "on" : "off"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setEditing(entry)}
