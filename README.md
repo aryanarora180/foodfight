@@ -64,25 +64,27 @@ size, the same way a Mac app's sidebar collapses to an iPhone tab bar:
 
 ### Submission phase
 - One pick per person, straight from the restaurant list. Picks are public
-  as they land — a "Submitted so far" grid shows every pick with who
+  as they land — a "On the ballot" grid shows every pick with who
   submitted it. Change your pick or remove it entirely any time before
   voting starts.
 - **Reactions** — react to any submitted pick with 🔥 😍 🤢 👀. No limit,
   mash the same emoji as many times as you want, just for fun. Counts update
   live for everyone.
-- **Your lunch card** sits at the top of the Vote tab and is the one place
-  to say where you stand. Three explicit choices, each with a one-line
-  description, the current one highlighted, and a headline with your state
-  ("you haven't chosen yet", "you picked X", "you're just voting", "you're
-  not coming"). Until you choose, the card glows and the headline says so:
-  - **picking a place**: you choose a restaurant from the list below.
-  - **just voting**: no pick from you, but you're in and you still vote.
-    This is the old "skip" and it does not mean you're not coming.
-  - **not coming**: skipping lunch, no pick or vote needed.
-  Switching is one tap. Moving from picked to just voting asks first,
-  because it takes your pick off the table. Your choice sticks until you
-  change it. The pick list only shows while you're picking; just-voting and
-  not-coming people see the grid of everyone else's picks full width.
+- **The status card** sits near the top of the Vote tab and is the one place
+  to say where you stand. A **Coming / Not coming** switch is always there
+  (everyone is coming by default). Under it, during submissions, there's one
+  big action, **nominate a restaurant**, with a quieter **just vote** next to
+  it. There's no restaurant list on the page to start
+  with: nominating opens a **sheet** with the shared list (search once it's
+  long, "+" to add a place, places already on the ballot marked). Tap a
+  place to nominate it.
+  Once you've answered, the card shrinks to a single row: your nomination
+  with **change** (reopens the sheet) and **remove**, or "you're just
+  voting" with **nominate one**. Removing shows an **undo** toast instead of
+  a confirm dialog. Nominating clears a previous "just vote" on its own.
+- **On the ballot** is the only restaurant list on the page: a card per
+  nomination (nominated by, menu link, reactions). Nominating is done from
+  the status card, not from this list.
 - Admins can edit the name/link on anyone's submitted pick, or delete it
   outright (deleting frees up that submitter to pick again); you can always
   edit or remove your own pick.
@@ -152,28 +154,32 @@ Its own tab (Admin 👑, admin-only), grouped like a settings page:
   hall of fame untouched.
 
 ### Live roster
-A status strip under the lunch card shows who's in the round and where they
-stand: "DECIDED (n/total)" during submissions, "VOTED (n/total)" during
-voting. Each person is a compact tile with one plain-language status:
-`picked`, `just voting`, `deciding` (in, but hasn't chosen yet), `not
-coming`, and during voting `voted` / `yet to vote`. Your own tile is marked
-"(you)". Pure status display, no controls; those live in Admin. Anyone
-marked not coming gets grouped into their own "NOT COMING" section below the
-main roster instead of counting toward the total, and "just voting" counts as
-decided so nobody holds up the round by not picking a restaurant.
+The people panel sits at the top of the Vote tab, under the title and the
+**Nominate → Vote → Results** step indicator (done steps get a check, the
+current one is lit). Its header is "COMING (n)": everyone is coming unless
+they say otherwise. It's a quiet inline list, no cards or avatars: a colored
+dot, a name, and one quiet word under it for where they stand: `nominated`,
+`just voting`, or `coming` (hasn't nominated or chosen to just vote yet), and during voting
+`voted` / `yet to vote`. Your own entry is marked "(you)". Pure status
+display, no controls; those live in Admin. Anyone marked not coming drops
+into their own muted "NOT COMING (n)" group below, names underneath, instead
+of counting toward the total. Your own status also shows as a small chip
+under your name in the desktop sidebar, so it's visible on every tab.
 
 ### Not coming
-Choose **not coming** on the lunch card (or the "not coming?" button during
-voting) and you become a pure spectator: no need to submit or vote, and
-you're pulled out of the "decided" / "voted" counts so you can't accidentally
-hold up the round. You still see everything everyone else does (submitted
-picks and results once they drop) with no elevated visibility into sealed
-ballots. The flag carries over between rounds, set it once and it sticks
-until you (or an admin) flip it back, so you don't have to re-flag yourself
-every time someone resets the board. During voting the lunch card shrinks to
-a status line ("your vote is needed" / "your vote is in" / "you're not
-coming") with a "count me in" button when you're out. Admins can mark or
-un-mark anyone from the Admin tab's People list.
+Flip the status card's switch to **Not coming** ("i'm not joining lunch
+today") and you're in read-only mode: you can
+see everything everyone else does (what's on the ballot, who's coming,
+results once they drop), but you can't nominate, edit a nomination, vote, or
+react to picks, and the restaurant list and ballot editor are hidden. You
+don't count toward the round, so you can't hold it up. No elevated
+visibility into sealed ballots. The flag carries over between rounds, set it
+once and it sticks until you (or an admin) flip it back. During voting the
+status card shrinks to a status line ("your vote is needed" / "your vote is
+in"); the Coming / Not coming switch stays put either way.
+Admins can mark or un-mark anyone from the Admin tab's People list. Note:
+the server blocks nominating and voting for not-coming users; the react
+button is disabled in the UI only.
 
 ## Tech stack
 

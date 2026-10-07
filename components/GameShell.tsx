@@ -9,9 +9,11 @@ import { ResultsPhase } from "./ResultsPhase";
 import { AdminPanel } from "./AdminPanel";
 import { RosterTicker } from "./RosterTicker";
 import { LunchStatusCard } from "./LunchStatusCard";
+import { PhaseSteps } from "./PhaseSteps";
 import { VaultTab } from "./VaultTab";
 import { HistoryTab } from "./HistoryTab";
 import { NavShell, type NavTab } from "./NavShell";
+import { statusWord } from "@/lib/lunchStatus";
 
 const PHASE_LABEL: Record<string, string> = {
   submission: "📝 submissions open",
@@ -63,12 +65,14 @@ export function GameShell({
       username={username}
       isAdmin={isAdmin}
       phaseLabel={PHASE_LABEL[state.phase]}
+      myStatus={statusWord(state, username)}
       votingTypeLabel={state.phase !== "submission" ? VOTING_TYPE_BADGE[state.votingType] : null}
       onLogout={onLogout}
     >
       {tab === "vote" && (
         <div>
-          <LunchStatusCard state={state} username={username} onChanged={() => mutate()} />
+          <h2 className="font-display mb-1 text-2xl text-gold">Vote</h2>
+          <PhaseSteps phase={state.phase} />
 
           <div className="mb-6">
             <RosterTicker
@@ -78,6 +82,8 @@ export function GameShell({
               me={username}
             />
           </div>
+
+          <LunchStatusCard state={state} username={username} onChanged={() => mutate()} />
 
           <AnimatePresence mode="wait">
             <motion.div
@@ -101,6 +107,7 @@ export function GameShell({
               {state.phase === "results" && <ResultsPhase state={state} />}
             </motion.div>
           </AnimatePresence>
+
         </div>
       )}
 

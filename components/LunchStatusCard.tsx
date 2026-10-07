@@ -1,30 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { motion } from "framer-motion";
 import type { PublicState } from "@/lib/types";
-import { lunchStatus, type LunchStatus } from "@/lib/lunchStatus";
-import { ConfirmModal } from "./ConfirmModal";
-
-type ChoiceId = "picking" | "voting" | "away";
-
-const CHOICES: {
-  id: ChoiceId;
-  icon: string;
-  label: string;
-  sub: string;
-  status: LunchStatus;
-}[] = [
-  { id: "picking", icon: "🍽️", label: "picking a place", sub: "i'll choose a restaurant", status: "picked" },
-  { id: "voting", icon: "🗳️", label: "just voting", sub: "no pick from me, i'll still vote", status: "just-voting" },
-  { id: "away", icon: "🙅", label: "not coming", sub: "skipping lunch, no vote needed", status: "not-coming" },
-];
-
-const HEADLINE: Record<LunchStatus, { text: (pick?: string) => string; tone: string }> = {
-  undecided: { text: () => "you haven't chosen yet", tone: "text-gold" },
-  picked: { text: (pick) => `you picked ${pick}`, tone: "text-win" },
-  "just-voting": { text: () => "you're just voting", tone: "text-sky" },
-  "not-coming": { text: () => "you're not coming", tone: "text-white/50" },
-};
+import { lunchStatus } from "@/lib/lunchStatus";
+import { NominateSheet } from "./NominateSheet";
+import { UndoToast } from "./UndoToast";
 
 // Returns an error message, or null on success.
 async function call(path: string, body?: unknown): Promise<string | null> {
@@ -42,9 +23,60 @@ async function call(path: string, body?: unknown): Promise<string | null> {
   }
 }
 
-// Always-visible "where do I stand" card at the top of the Vote tab. During
-// submissions it's the one place to say whether you're picking a place, just
-// voting, or not coming; during voting it says whether your vote is needed.
+const SEGMENTS = [
+  { away: false, label: "Coming" },
+  { away: true, label: "Not coming" },
+];
+
+function Segmented({
+  away,
+  disabled,
+  onChange,
+}: {
+  away: boolean;
+  disabled: boolean;
+  onChange: (away: boolean) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="are you coming to lunch"
+      className="relative flex rounded-full border border-white/10 bg-black/30 p-1"
+    >
+      {SEGMENTS.map((seg) => {
+        const selected = away === seg.away;
+        return (
+          <button
+            key={seg.label}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            disabled={disabled}
+            onClick={() => !selected && onChange(seg.away)}
+            className={`relative rounded-full px-4 py-1.5 text-sm font-semibold transition disabled:opacity-60 ${
+              selected ? "text-gold" : "text-white/50 hover:text-white/80"
+            }`}
+          >
+            {selected && (
+              <motion.span
+                layoutId="rsvp-thumb"
+                transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                className="absolute inset-0 rounded-full border border-gold/50 bg-gold/15"
+              />
+            )}
+            <span className="relative">{seg.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// "Where do I stand" card at the top of the Vote tab. A Coming / Not coming
+// switch is always there (everyone is coming by default). Underneath, during
+// submissions, there's one big action: nominate a restaurant, with a quiet
+// "just vote" next to it. Once you've answered, the card shrinks to a single
+// summary row. During voting it just says whether your vote is needed.
 export function LunchStatusCard({
   state,
   username,
@@ -56,10 +88,15 @@ export function LunchStatusCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDrop, setConfirmDrop] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; historyId: string | null } | null>(null);
 
   const { status, pick } = lunchStatus(state, username);
   const me = state.users.find((u) => u.username === username);
+  const away = status === "not-coming";
+
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+  const dismissToast = useCallback(() => setToast(null), []);
 
   async function run(steps: [string, unknown?][]) {
     setError(null);
@@ -75,135 +112,130 @@ export function LunchStatusCard({
     onChanged();
   }
 
-  function justVote() {
-    const steps: [string, unknown?][] = [];
-    if (status === "not-coming") steps.push(["/api/not-coming", { value: false }]);
-    if (pick) steps.push(["/api/remove-pick"]);
-    steps.push(["/api/pass"]);
-    return run(steps);
+  async function removeNomination() {
+    if (!pick) return;
+    const entry = state.history.find(
+      (h) => h.name.trim().toLowerCase() === pick.name.trim().toLowerCase()
+    );
+    await run([["/api/remove-pick"]]);
+    setToast({ message: `removed ${pick.name}`, historyId: entry?.id ?? null });
   }
 
-  function choose(id: ChoiceId) {
-    if (busy) return;
-    if (id === "picking") {
-      if (status === "not-coming") {
-        const steps: [string, unknown?][] = [["/api/not-coming", { value: false }]];
-        if (me?.passedSubmission) steps.push(["/api/pass", { value: false }]);
-        run(steps);
-      } else if (status === "just-voting") {
-        run([["/api/pass", { value: false }]]);
-      } else {
-        document
-          .getElementById("restaurant-picker")
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    } else if (id === "voting") {
-      if (status === "just-voting") return;
-      if (pick) setConfirmDrop(true);
-      else justVote();
-    } else if (status !== "not-coming") {
-      run([["/api/not-coming", { value: true }]]);
-    }
+  async function undoRemove() {
+    const historyId = toast?.historyId;
+    setToast(null);
+    if (!historyId) return;
+    await run([["/api/submit", { historyId }]]);
   }
 
   if (state.phase === "results") return null;
 
-  if (state.phase === "voting") {
+  let body: React.ReactNode = null;
+  if (away) {
+    body = <p className="mt-4 text-sm text-white/50">i&apos;m not joining lunch today</p>;
+  } else if (state.phase === "voting") {
     const voted = Boolean(me?.hasVoted);
-    const away = status === "not-coming";
-    return (
-      <div className="felt-panel mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{away ? "🙅" : voted ? "✅" : "🗳️"}</span>
-          <div className="leading-tight">
-            <p className="text-xs font-semibold tracking-wide text-sky/80">YOUR LUNCH</p>
-            <p
-              className={`font-semibold ${
-                away ? "text-white/50" : voted ? "text-win" : "text-gold"
-              }`}
-            >
-              {away ? "you're not coming" : voted ? "your vote is in" : "your vote is needed"}
-            </p>
-          </div>
-        </div>
+    body = (
+      <div
+        className={`mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+          voted ? "border-win/30 bg-win/5" : "border-gold/40 bg-gold/5"
+        }`}
+      >
+        <span className="text-2xl">{voted ? "✅" : "🗳️"}</span>
+        <p className={`font-semibold ${voted ? "text-win" : "text-gold"}`}>
+          {voted ? "your vote is in" : "your vote is needed"}
+        </p>
+      </div>
+    );
+  } else if (status === "picked" && pick) {
+    body = (
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-win/30 bg-win/5 px-4 py-3">
+        <span className="text-2xl">🍽️</span>
+        <p className="min-w-0 flex-1 truncate font-semibold">{pick.name}</p>
         <button
           type="button"
-          onClick={() => run([["/api/not-coming", { value: !away }]])}
+          onClick={() => setSheetOpen(true)}
           disabled={busy}
-          className={`rounded-full px-4 py-1.5 text-sm disabled:opacity-40 ${
-            away ? "chip-btn" : "chip-btn-ghost"
-          }`}
+          className="chip-btn-ghost rounded-full px-4 py-1.5 text-sm disabled:opacity-40"
         >
-          {busy ? "…" : away ? "count me in" : "not coming?"}
+          change
         </button>
-        {error && (
-          <p className="w-full rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
-        )}
+        <button
+          type="button"
+          onClick={removeNomination}
+          disabled={busy}
+          className="rounded-full px-2 py-1.5 text-sm text-white/40 transition hover:text-red-300 disabled:opacity-40"
+        >
+          remove
+        </button>
+      </div>
+    );
+  } else if (status === "just-voting") {
+    body = (
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-sky/30 bg-sky/5 px-4 py-3">
+        <span className="text-2xl">🗳️</span>
+        <p className="min-w-0 flex-1 font-semibold">you&apos;re just voting</p>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          disabled={busy}
+          className="chip-btn-ghost rounded-full px-4 py-1.5 text-sm disabled:opacity-40"
+        >
+          nominate one
+        </button>
+      </div>
+    );
+  } else {
+    body = (
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1.6fr_1fr]">
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          disabled={busy}
+          className="chip-btn w-full py-3 font-display text-lg disabled:opacity-40"
+        >
+          NOMINATE A RESTAURANT
+        </button>
+        <button
+          type="button"
+          onClick={() => run([["/api/pass"]])}
+          disabled={busy}
+          className="chip-btn-ghost w-full rounded-full py-3 text-sm font-semibold disabled:opacity-40"
+        >
+          just vote
+        </button>
       </div>
     );
   }
 
-  const headline = HEADLINE[status];
-  const undecided = status === "undecided";
-
   return (
-    <div
-      className={`felt-panel mb-6 rounded-3xl p-4 sm:p-5 ${
-        undecided ? "!border-gold/50 shadow-[0_0_24px_rgba(255,200,60,0.12)]" : ""
-      }`}
-    >
-      <ConfirmModal
-        open={confirmDrop}
-        title="drop your pick?"
-        message={`${pick?.name} comes off the table. you'll just vote.`}
-        confirmLabel="just vote"
-        onConfirm={() => {
-          setConfirmDrop(false);
-          justVote();
-        }}
-        onCancel={() => setConfirmDrop(false)}
+    <>
+      {/* fixed overlays live outside the panel so its styling can't trap them */}
+      <NominateSheet
+        open={sheetOpen}
+        onClose={closeSheet}
+        state={state}
+        username={username}
+        onChanged={onChanged}
       />
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="text-xs font-semibold tracking-wide text-sky/80">YOUR LUNCH</p>
-        <p className={`flex items-center gap-2 text-sm font-semibold ${headline.tone}`}>
-          {undecided && <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />}
-          {headline.text(pick?.name)}
-        </p>
-      </div>
+      <UndoToast message={toast?.message ?? null} onUndo={undoRemove} onDismiss={dismissToast} />
 
-      <div role="radiogroup" aria-label="your lunch plan" className="grid gap-2 sm:grid-cols-3">
-        {CHOICES.map((c) => {
-          const selected = status === c.status;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={busy}
-              onClick={() => choose(c.id)}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition disabled:opacity-60 sm:flex-col sm:items-start sm:gap-1 ${
-                selected
-                  ? "border-gold/70 bg-gold/10"
-                  : "border-white/10 bg-black/20 hover:border-gold/40"
-              }`}
-            >
-              <span className="text-2xl">{c.icon}</span>
-              <span className="min-w-0 flex-1 sm:flex-none">
-                <span className={`block font-semibold ${selected ? "text-gold" : ""}`}>
-                  {selected && "✓ "}
-                  {c.label}
-                </span>
-                <span className="block text-xs text-white/50">{c.sub}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <section className="felt-panel mb-6 rounded-3xl p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold tracking-wide text-sky/80">YOUR STATUS</p>
+          <Segmented
+            away={away}
+            disabled={busy}
+            onChange={(value) => run([["/api/not-coming", { value }]])}
+          />
+        </div>
 
-      {error && (
-        <p className="mt-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
-      )}
-    </div>
+        {body}
+
+        {error && (
+          <p className="mt-3 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+        )}
+      </section>
+    </>
   );
 }

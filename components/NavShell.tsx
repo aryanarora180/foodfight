@@ -1,5 +1,7 @@
 "use client";
 
+import { TONE_STYLES, type Tone } from "@/lib/statusTone";
+
 export interface NavTab {
   id: string;
   label: string;
@@ -14,6 +16,7 @@ export function NavShell({
   isAdmin,
   phaseLabel,
   votingTypeLabel,
+  myStatus,
   onLogout,
   children,
 }: {
@@ -24,6 +27,7 @@ export function NavShell({
   isAdmin: boolean;
   phaseLabel: string;
   votingTypeLabel: string | null;
+  myStatus: { text: string; tone: Tone };
   onLogout: () => void;
   children: React.ReactNode;
 }) {
@@ -84,6 +88,10 @@ export function NavShell({
           <p className="truncate px-2 text-sm font-semibold">
             {isAdmin && "👑 "}
             {username}
+          </p>
+          <p className="mt-1 flex items-center gap-1.5 px-2 text-xs">
+            <span className={`h-1.5 w-1.5 rounded-full ${TONE_STYLES[myStatus.tone].dot}`} />
+            <span className={TONE_STYLES[myStatus.tone].text}>{myStatus.text}</span>
           </p>
           <button
             onClick={onLogout}

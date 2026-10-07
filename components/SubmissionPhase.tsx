@@ -4,13 +4,12 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { REACTION_EMOJI, type PublicState as State, type Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
-import { AddRestaurantModal } from "./AddRestaurantModal";
 import { ConfirmModal } from "./ConfirmModal";
-import { RodeoGoatModal } from "./RodeoGoatModal";
-import { DodgyGoatChip } from "./DodgyGoatChip";
-import { isDodgy } from "@/lib/rodeoGoat";
 import { lunchStatus } from "@/lib/lunchStatus";
 
+// The ballot: everything nominated so far, as cards. Nominating itself
+// happens from the status card at the top of the tab (it opens a sheet), so
+// this is the only restaurant list on the page.
 export function SubmissionPhase({
   state,
   username,
@@ -22,52 +21,13 @@ export function SubmissionPhase({
   isAdmin: boolean;
   onChanged: () => void;
 }) {
-  const mine = state.restaurants.find((r) => r.submittedBy === username);
-  const [error, setError] = useState<string | null>(null);
-  const [picking, setPicking] = useState<string | null>(null);
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [removingMine, setRemovingMine] = useState(false);
   const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
-  const [showAdd, setShowAdd] = useState(false);
-  const [showGoat, setShowGoat] = useState(false);
 
-  // Only people who are in and still picking (or already picked) see the
-  // list. Just-voting and not-coming people get the whole width for the
-  // grid of what everyone else submitted. Status itself lives in the card
-  // at the top of the tab.
-  const { status } = lunchStatus(state, username);
-  const showPicker = status === "undecided" || status === "picked";
-  const pickedElsewhere = new Set(
-    state.restaurants
-      .filter((r) => r.submittedBy !== username)
-      .map((r) => r.name.trim().toLowerCase())
-  );
-
-  async function pick(historyId: string) {
-    setError(null);
-    setPicking(historyId);
-    try {
-      const res = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ historyId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "something went wrong");
-        return;
-      }
-      const entry = state.history.find((h) => h.id === historyId);
-      if (entry && isDodgy(entry)) setShowGoat(true);
-      onChanged();
-    } catch {
-      setError("network error. try again.");
-    } finally {
-      setPicking(null);
-    }
-  }
+  // Not coming means read-only: you can look, but not edit or react.
+  const readOnly = lunchStatus(state, username).status === "not-coming";
 
   async function confirmDeleteRestaurant() {
     const target = pendingDelete;
@@ -83,24 +43,6 @@ export function SubmissionPhase({
       onChanged();
     } finally {
       setDeleting(null);
-    }
-  }
-
-  async function removeMyPick() {
-    setError(null);
-    setRemovingMine(true);
-    try {
-      const res = await fetch("/api/remove-pick", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "something went wrong");
-        return;
-      }
-      onChanged();
-    } catch {
-      setError("network error. try again.");
-    } finally {
-      setRemovingMine(false);
     }
   }
 
@@ -120,7 +62,7 @@ export function SubmissionPhase({
   }
 
   return (
-    <div className={`grid gap-6 ${showPicker ? "lg:grid-cols-[380px_1fr]" : ""}`}>
+    <div>
       <EditRestaurantModal
         restaurant={editing}
         selfService={editing?.submittedBy === username}
@@ -138,188 +80,92 @@ export function SubmissionPhase({
         onConfirm={confirmDeleteRestaurant}
         onCancel={() => setPendingDelete(null)}
       />
-      <RodeoGoatModal open={showGoat} onClose={() => setShowGoat(false)} />
-      <AddRestaurantModal
-        open={showAdd}
-        onClose={() => setShowAdd(false)}
-        onAdded={() => {
-          setShowAdd(false);
-          onChanged();
-        }}
-      />
-      {showPicker && (
-        <div id="restaurant-picker" className="felt-panel neon-border rounded-3xl p-6">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="font-display text-xl text-gold">
-              {mine ? "Your pick" : "Pick a restaurant"}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setShowAdd(true)}
-              aria-label="add a restaurant"
-              title="add a restaurant"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-base font-semibold text-gold transition hover:bg-gold/25"
-            >
-              +
-            </button>
-          </div>
 
-          {error && (
-            <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
-          )}
-
-          {state.history.length === 0 ? (
-            <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-white/40">
-              no restaurants yet. add some from the Restaurants tab first.
-            </p>
-          ) : (
-            <div className="flex max-h-[360px] flex-wrap gap-2 overflow-y-auto pr-1">
-              {state.history.map((entry) => {
-                const taken = pickedElsewhere.has(entry.name.trim().toLowerCase());
-                const selected = mine?.name.trim().toLowerCase() === entry.name.trim().toLowerCase();
-                return (
-                  <div
-                    key={entry.id}
-                    className={`flex items-stretch overflow-hidden rounded-full border text-sm font-medium transition ${
-                      selected
-                        ? "!border-gold/70 !bg-gold/10 text-gold"
-                        : taken
-                          ? "border-white/5 text-white/30"
-                          : "border-white/10 bg-black/20"
-                    }`}
-                  >
-                    {isDodgy(entry) && !taken && !selected ? (
-                      <DodgyGoatChip
-                        entry={entry}
-                        onPick={() => pick(entry.id)}
-                        disabled={picking !== null}
-                        busy={picking === entry.id}
-                      />
-                    ) : (
+      <h3 className="font-display mb-3 text-lg text-sky">
+        On the ballot ({state.restaurants.length})
+      </h3>
+      {state.restaurants.length === 0 ? (
+        <div className="felt-panel rounded-2xl p-8 text-center">
+          <p className="text-sm text-white/50">nobody&apos;s nominated a restaurant yet.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
+            {state.restaurants.map((r) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, rotateY: -90 }}
+                animate={{ opacity: 1, rotateY: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.4 }}
+                className="felt-panel card-hover relative block rounded-2xl p-4 transition hover:border-gold/50"
+              >
+                {(isAdmin || (r.submittedBy === username && !readOnly)) && (
+                  <span className="absolute right-3 top-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(r)}
+                      aria-label={`edit ${r.name}`}
+                      className="text-white/40 hover:text-gold"
+                    >
+                      ✎
+                    </button>
+                    {isAdmin && (
                       <button
                         type="button"
-                        onClick={() => pick(entry.id)}
-                        disabled={taken || picking !== null}
-                        className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
+                        onClick={() => setPendingDelete(r)}
+                        disabled={deleting === r.id}
+                        aria-label={`remove ${r.name}`}
+                        className="text-white/40 hover:text-red-300 disabled:opacity-40"
                       >
-                        {picking === entry.id ? "…" : entry.name}
+                        🗑
                       </button>
                     )}
-                    <a
-                      href={entry.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`view ${entry.name} menu`}
-                      className={`flex items-center border-l px-3 py-2 text-xs transition ${
-                        selected
-                          ? "border-gold/30 text-gold/70 hover:text-gold"
-                          : "border-white/10 text-white/40 hover:bg-white/5 hover:text-sky"
-                      }`}
-                    >
-                      menu
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {mine && (
-            <button
-              type="button"
-              onClick={removeMyPick}
-              disabled={removingMine}
-              className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
-            >
-              {removingMine ? "removing…" : "remove my pick"}
-            </button>
-          )}
+                  </span>
+                )}
+                <a href={r.url} target="_blank" rel="noreferrer" className="block">
+                  <p className="mb-1 text-2xl">🍽️</p>
+                  <p className="pr-10 font-semibold">{r.name}</p>
+                  <p className="mt-1 text-xs text-white/40">nominated by {r.submittedBy}</p>
+                  <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
+                </a>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {REACTION_EMOJI.map((emoji) => {
+                    const key = `${r.id}:${emoji}`;
+                    const total = (r.reactions?.[emoji] ?? 0) + (pendingReactions[key] ?? 0);
+                    return (
+                      <motion.button
+                        key={emoji}
+                        type="button"
+                        onClick={() => react(r.id, emoji)}
+                        disabled={readOnly}
+                        whileTap={readOnly ? undefined : { scale: 0.8 }}
+                        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs transition enabled:hover:border-gold/40 enabled:hover:bg-gold/10 enabled:active:border-gold/60 disabled:cursor-default disabled:opacity-60"
+                      >
+                        <span>{emoji}</span>
+                        {total > 0 && (
+                          <AnimatePresence mode="popLayout" initial={false}>
+                            <motion.span
+                              key={total}
+                              initial={{ y: -6, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              exit={{ y: 6, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="text-white/50"
+                            >
+                              {total}
+                            </motion.span>
+                          </AnimatePresence>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
-
-      <div>
-        <h3 className="font-display mb-3 text-lg text-sky">
-          Submitted so far ({state.restaurants.length})
-        </h3>
-        {state.restaurants.length === 0 ? (
-          <p className="text-white/40">nobody&apos;s dropped a pick yet. be the first.</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AnimatePresence>
-              {state.restaurants.map((r) => (
-                <motion.div
-                  key={r.id}
-                  initial={{ opacity: 0, rotateY: -90 }}
-                  animate={{ opacity: 1, rotateY: 0 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.4 }}
-                  className="felt-panel card-hover relative block rounded-2xl p-4 transition hover:border-gold/50"
-                >
-                  {(isAdmin || r.submittedBy === username) && (
-                    <span className="absolute right-3 top-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditing(r)}
-                        aria-label={`edit ${r.name}`}
-                        className="text-white/40 hover:text-gold"
-                      >
-                        ✎
-                      </button>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setPendingDelete(r)}
-                          disabled={deleting === r.id}
-                          aria-label={`remove ${r.name}`}
-                          className="text-white/40 hover:text-red-300 disabled:opacity-40"
-                        >
-                          🗑
-                        </button>
-                      )}
-                    </span>
-                  )}
-                  <a href={r.url} target="_blank" rel="noreferrer" className="block">
-                    <p className="mb-1 text-2xl">🍽️</p>
-                    <p className="font-semibold pr-10">{r.name}</p>
-                    <p className="mt-1 text-xs text-white/40">picked by {r.submittedBy}</p>
-                    <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
-                  </a>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {REACTION_EMOJI.map((emoji) => {
-                      const key = `${r.id}:${emoji}`;
-                      const total = (r.reactions?.[emoji] ?? 0) + (pendingReactions[key] ?? 0);
-                      return (
-                        <motion.button
-                          key={emoji}
-                          type="button"
-                          onClick={() => react(r.id, emoji)}
-                          whileTap={{ scale: 0.8 }}
-                          className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs transition hover:border-gold/40 hover:bg-gold/10 active:border-gold/60"
-                        >
-                          <span>{emoji}</span>
-                          {total > 0 && (
-                            <AnimatePresence mode="popLayout" initial={false}>
-                              <motion.span
-                                key={total}
-                                initial={{ y: -6, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: 6, opacity: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="text-white/50"
-                              >
-                                {total}
-                              </motion.span>
-                            </AnimatePresence>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

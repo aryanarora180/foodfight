@@ -21,12 +21,19 @@ export function DodgyGoatChip({
   onPick,
   disabled,
   busy,
+  rowStyle = false,
 }: {
   entry: HistoryEntry;
   onPick: () => void;
   disabled: boolean;
   busy: boolean;
+  // true when it sits in a plain list row instead of inside a pill
+  rowStyle?: boolean;
 }) {
+  const inlineClass = rowStyle
+    ? "min-w-0 flex-1 truncate py-2.5 text-left font-medium hover:text-gold disabled:cursor-not-allowed"
+    : "px-4 py-2 hover:opacity-80 disabled:cursor-not-allowed";
+  const ranOffClass = rowStyle ? "py-2.5 italic text-white/30" : "px-4 py-2 italic text-white/30";
   const inlineRef = useRef<HTMLButtonElement>(null);
   const floatRef = useRef<HTMLButtonElement>(null);
   const lastDodge = useRef(0);
@@ -121,7 +128,7 @@ export function DodgyGoatChip({
         onPointerEnter={handlePointerEnter}
         onPointerDown={handlePointerDown}
         onClick={handleClick}
-        className="px-4 py-2 hover:opacity-80 disabled:cursor-not-allowed"
+        className={inlineClass}
       >
         {label}
       </button>
@@ -130,7 +137,7 @@ export function DodgyGoatChip({
 
   return (
     <>
-      <span className="px-4 py-2 italic text-white/30">{entry.name} ran off</span>
+      <span className={ranOffClass}>{entry.name} ran off</span>
       {createPortal(
         <motion.button
           ref={floatRef}
@@ -147,7 +154,7 @@ export function DodgyGoatChip({
             rotate: { duration: 0.35, ease: "easeInOut" },
           }}
           style={{ position: "fixed" }}
-          className="z-40 whitespace-nowrap rounded-full border border-gold/60 bg-black/80 px-4 py-2 text-sm font-medium text-gold shadow-lg shadow-black/50 disabled:cursor-not-allowed"
+          className="z-[70] whitespace-nowrap rounded-full border border-gold/60 bg-black/80 px-4 py-2 text-sm font-medium text-gold shadow-lg shadow-black/50 disabled:cursor-not-allowed"
         >
           {label}
         </motion.button>,
