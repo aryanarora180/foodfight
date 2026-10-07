@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { HistoryEntry } from "@/lib/types";
+import { dodgeTries } from "@/lib/rodeoGoat";
 
 // Rodeo Goat runs away from the cursor in the pick list. It gives up after
-// MAX_DODGES so it's annoying to pick, not impossible.
-const MAX_DODGES = 8;
+// a set number of dodges (admin-configurable) so it's annoying to pick, not
+// impossible.
 const TAUNTS = ["nope 🐐", "too slow", "nice try", "not today", "pls no", "over here", "😭😭😭"];
 const TIRED = "ok fine 😮‍💨";
 const NEAR_PX = 40;
@@ -34,7 +35,7 @@ export function DodgyGoatChip({
   const [pos, setPos] = useState<Pos | null>(null);
   const [dodges, setDodges] = useState(0);
 
-  const tired = dodges >= MAX_DODGES;
+  const tired = dodges >= dodgeTries(entry);
 
   function dodge(pointer: Pos) {
     if (tired || disabled) return;

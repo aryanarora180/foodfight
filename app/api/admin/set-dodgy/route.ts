@@ -3,11 +3,23 @@ import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { updateState } from "@/lib/store";
 import { toPublicState } from "@/lib/gameLogic";
+import { MAX_DODGE_TRIES, MIN_DODGE_TRIES } from "@/lib/rodeoGoat";
 
-const schema = z.object({
-  id: z.string().min(1),
-  value: z.boolean(),
-});
+// Either flag the place on/off, set how many dodges it takes, or both.
+const schema = z
+  .object({
+    id: z.string().min(1),
+    value: z.boolean().optional(),
+    tries: z
+      .number()
+      .int("tries must be a whole number")
+      .min(MIN_DODGE_TRIES, `tries must be at least ${MIN_DODGE_TRIES}`)
+      .max(MAX_DODGE_TRIES, `tries can't be more than ${MAX_DODGE_TRIES}`)
+      .optional(),
+  })
+  .refine((v) => v.value !== undefined || v.tries !== undefined, {
+    message: "nothing to change",
+  });
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -23,14 +35,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { id, value } = parsed.data;
+  const { id, value, tries } = parsed.data;
 
   const { state, result } = await updateState((state) => {
     const existing = state.restaurantHistory[id];
     if (!existing) {
       return { error: "no such vault entry" as const };
     }
-    state.restaurantHistory[id] = { ...existing, dodgy: value };
+    state.restaurantHistory[id] = {
+      ...existing,
+      ...(value !== undefined && { dodgy: value }),
+      ...(tries !== undefined && { dodgeTries: tries }),
+    };
     return { ok: true as const };
   });
 

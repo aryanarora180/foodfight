@@ -35,7 +35,7 @@ accumulates across tests within one file.
   password reset.
 - `restaurants.test.mjs` — the shared restaurant list: add/edit/delete,
   duplicate-name rejection, alphabetical ordering, phase-independence.
-- `dodgy.test.mjs` — the admin-only Rodeo Goat flag on list entries: on/off,
+- `dodgy.test.mjs` — the admin-only Rodeo Goat flag and dodge count on list entries: on/off,
   validation, and surviving edits and round resets. The dodging, popup, and
   💩 overlay themselves are client-side and checked by hand.
 - `submission.test.mjs` — picking from the list, changing/removing a pick,

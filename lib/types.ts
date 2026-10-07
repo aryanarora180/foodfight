@@ -35,6 +35,9 @@ export interface HistoryEntry {
   // Admin-controlled: this place runs from the cursor and nags voters.
   // Unset means the default (on for Rodeo Goat, off for everything else).
   dodgy?: boolean;
+  // How many times a dodgy place runs before it lets itself be picked.
+  // Unset means DEFAULT_DODGE_TRIES.
+  dodgeTries?: number;
 }
 
 export interface WinnerRecord {

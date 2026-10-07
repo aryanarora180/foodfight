@@ -16,3 +16,12 @@ export function isDodgy(entry: { name: string; dodgy?: boolean }): boolean {
 export function dodgyNameSet(history: { name: string; dodgy?: boolean }[]): Set<string> {
   return new Set(history.filter(isDodgy).map((h) => h.name.trim().toLowerCase()));
 }
+
+export const DEFAULT_DODGE_TRIES = 8;
+export const MIN_DODGE_TRIES = 1;
+export const MAX_DODGE_TRIES = 30;
+
+// How many times a dodgy place runs from the cursor before it gives up.
+export function dodgeTries(entry: { dodgeTries?: number }): number {
+  return entry.dodgeTries ?? DEFAULT_DODGE_TRIES;
+}

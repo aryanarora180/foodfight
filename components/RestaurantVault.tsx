@@ -4,7 +4,12 @@ import { useState } from "react";
 import type { HistoryEntry } from "@/lib/types";
 import { EditHistoryModal } from "./EditHistoryModal";
 import { ConfirmModal } from "./ConfirmModal";
-import { isDodgy } from "@/lib/rodeoGoat";
+import {
+  dodgeTries,
+  isDodgy,
+  MAX_DODGE_TRIES,
+  MIN_DODGE_TRIES,
+} from "@/lib/rodeoGoat";
 
 export function RestaurantVault({
   history,
@@ -39,13 +44,13 @@ export function RestaurantVault({
     }
   }
 
-  async function toggleDodgy(entry: HistoryEntry) {
+  async function updateDodgy(entry: HistoryEntry, change: { value?: boolean; tries?: number }) {
     setTogglingDodgy(entry.id);
     try {
       await fetch("/api/admin/set-dodgy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: entry.id, value: !isDodgy(entry) }),
+        body: JSON.stringify({ id: entry.id, ...change }),
       });
       onChanged();
     } finally {
@@ -80,6 +85,35 @@ export function RestaurantVault({
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{entry.name}</p>
               <p className="truncate text-xs text-white/40">added by {entry.username}</p>
+              {isAdmin && isDodgy(entry) && (
+                <span
+                  className="mt-1 flex items-center gap-1.5 text-xs text-white/50"
+                  title="how many times it runs before it lets itself be picked"
+                >
+                  <span>🐐 runs</span>
+                  <button
+                    type="button"
+                    onClick={() => updateDodgy(entry, { tries: dodgeTries(entry) - 1 })}
+                    disabled={togglingDodgy === entry.id || dodgeTries(entry) <= MIN_DODGE_TRIES}
+                    aria-label={`fewer dodges for ${entry.name}`}
+                    className="h-5 w-5 rounded-full border border-white/10 leading-none hover:text-gold disabled:opacity-30"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[3ch] text-center tabular-nums text-white/70">
+                    {dodgeTries(entry)}x
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => updateDodgy(entry, { tries: dodgeTries(entry) + 1 })}
+                    disabled={togglingDodgy === entry.id || dodgeTries(entry) >= MAX_DODGE_TRIES}
+                    aria-label={`more dodges for ${entry.name}`}
+                    className="h-5 w-5 rounded-full border border-white/10 leading-none hover:text-gold disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </span>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-3 text-xs">
               <a
@@ -94,7 +128,7 @@ export function RestaurantVault({
                 <>
                   <button
                     type="button"
-                    onClick={() => toggleDodgy(entry)}
+                    onClick={() => updateDodgy(entry, { value: !isDodgy(entry) })}
                     disabled={togglingDodgy === entry.id}
                     aria-pressed={isDodgy(entry)}
                     title={

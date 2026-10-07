@@ -62,3 +62,41 @@ test("the flag survives editing the entry and resetting the round", async () => 
   assert.equal(after.dodgy, false);
   assert.equal(after.url, "https://example.com/new-menu");
 });
+
+test("an admin can set how many dodges it takes, within 1 to 30", async () => {
+  const admin = await bootstrapAdmin("dodgy-admin-5");
+  const goat = await addEntry(admin.client, "Rodeo Goat");
+  // Unset means the default of 8, decided client-side.
+  assert.equal(goat.dodgeTries, undefined);
+
+  const set = await admin.client.post("/api/admin/set-dodgy", { id: goat.id, tries: 3 });
+  assert.equal(set.status, 200);
+  const after = set.data.state.history.find((h) => h.id === goat.id);
+  assert.equal(after.dodgeTries, 3);
+  // Changing only the count leaves the on/off flag alone.
+  assert.equal(after.dodgy, undefined);
+
+  for (const bad of [0, 31, 2.5, "5"]) {
+    const res = await admin.client.post("/api/admin/set-dodgy", { id: goat.id, tries: bad });
+    assert.equal(res.status, 400, `tries=${JSON.stringify(bad)} should be rejected`);
+  }
+
+  // On/off and count can be set together, and the count survives turning it off.
+  const both = await admin.client.post("/api/admin/set-dodgy", {
+    id: goat.id,
+    value: false,
+    tries: 12,
+  });
+  assert.equal(both.status, 200);
+  const final = both.data.state.history.find((h) => h.id === goat.id);
+  assert.equal(final.dodgy, false);
+  assert.equal(final.dodgeTries, 12);
+});
+
+test("only admins can change the dodge count", async () => {
+  const admin = await bootstrapAdmin("dodgy-admin-6");
+  const goat = await addEntry(admin.client, "Rodeo Goat");
+  const user = await createActivatedUser(admin.client, "dodgy-user-6");
+  const res = await user.client.post("/api/admin/set-dodgy", { id: goat.id, tries: 2 });
+  assert.equal(res.status, 403);
+});
