@@ -74,7 +74,12 @@ export function GameShell({
         <div>
           <div className="mb-1 flex items-end justify-between">
             <h2 className="font-display text-2xl text-gold">Vote</h2>
-            {state.phase !== "results" && <FoodFightDog className="-mb-1 w-14 sm:w-16" />}
+            {state.phase !== "results" && (
+              <>
+                <FoodFightDog className="-mb-1 w-14 sm:w-16 xl:hidden" />
+                <FoodFightDog className="fixed bottom-0 right-4 z-10 hidden w-36 xl:block 2xl:right-8 2xl:w-52" />
+              </>
+            )}
           </div>
           <PhaseSteps phase={state.phase} />
 
