@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Restaurant } from "@/lib/types";
+import { wonText } from "@/lib/recentWins";
 import { PoopStorm } from "./PoopStorm";
 
 export function SimpleVoteEditor({
@@ -10,12 +11,14 @@ export function SimpleVoteEditor({
   onSubmit,
   submitting,
   dodgyNames,
+  lastWon,
 }: {
   restaurants: Restaurant[];
   initialPick: string | null;
   onSubmit: (id: string) => void;
   submitting: boolean;
   dodgyNames: Set<string>;
+  lastWon?: Map<string, number>;
 }) {
   const [selected, setSelected] = useState<string | null>(initialPick);
   const [booed, setBooed] = useState<string | null>(null);
@@ -55,7 +58,12 @@ export function SimpleVoteEditor({
           >
             <p className="font-semibold">{r.name}</p>
             <div className="flex items-center gap-2 text-xs text-white/40">
-              <span>picked by {r.submittedBy}</span>
+              <span>
+                picked by {r.submittedBy}
+                {wonText(lastWon, r.name) && (
+                  <span className="text-gold/70"> · {wonText(lastWon, r.name)}</span>
+                )}
+              </span>
               <a
                 href={r.url}
                 target="_blank"

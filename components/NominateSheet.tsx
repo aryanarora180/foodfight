@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { PublicState } from "@/lib/types";
 import { isDodgy } from "@/lib/rodeoGoat";
 import { AddRestaurantModal } from "./AddRestaurantModal";
+import { lastWonByName, wonText } from "@/lib/recentWins";
 import { DodgyGoatChip } from "./DodgyGoatChip";
 import { RodeoGoatModal } from "./RodeoGoatModal";
 
@@ -34,6 +35,7 @@ export function NominateSheet({
   const takenBy = new Map(
     state.restaurants.map((r) => [r.name.trim().toLowerCase(), r.submittedBy])
   );
+  const lastWon = lastWonByName(state.winnerHistory);
   const query = filter.trim().toLowerCase();
   const entries = state.history.filter((h) => !query || h.name.toLowerCase().includes(query));
 
@@ -176,6 +178,10 @@ export function NominateSheet({
                           ) : taken ? (
                             "on the ballot"
                           ) : (
+                            <>
+                              {wonText(lastWon, entry.name) && (
+                                <span className="mr-3 text-gold/60">{wonText(lastWon, entry.name)}</span>
+                              )}
                             <a
                               href={entry.url}
                               target="_blank"
@@ -185,6 +191,7 @@ export function NominateSheet({
                             >
                               menu
                             </a>
+                            </>
                           )}
                         </span>
                       </li>

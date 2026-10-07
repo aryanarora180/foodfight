@@ -56,6 +56,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     username,
     tempPassword,
-    state: toPublicState(state),
+    state: toPublicState(state, session.username ?? ""),
   });
 }

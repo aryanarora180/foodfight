@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PublicState } from "@/lib/types";
 import { RestaurantVault } from "./RestaurantVault";
+import { lastWonByName } from "@/lib/recentWins";
 import { AddRestaurantModal } from "./AddRestaurantModal";
 
 export function VaultTab({
@@ -52,7 +53,12 @@ export function VaultTab({
         </div>
       ) : (
         <div className="felt-panel rounded-2xl p-4">
-          <RestaurantVault history={state.history} isAdmin={isAdmin} onChanged={onChanged} />
+          <RestaurantVault
+            history={state.history}
+            lastWon={lastWonByName(state.winnerHistory)}
+            isAdmin={isAdmin}
+            onChanged={onChanged}
+          />
         </div>
       )}
     </div>

@@ -7,5 +7,5 @@ export async function GET() {
   if (!record) {
     return NextResponse.json({ error: "not logged in" }, { status: 401 });
   }
-  return NextResponse.json({ state: toPublicState(state) });
+  return NextResponse.json({ state: toPublicState(state, record.username) });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { TONE_STYLES, type Tone } from "@/lib/statusTone";
+import { play, useMuted } from "@/lib/sound";
 
 export interface NavTab {
   id: string;
@@ -31,6 +32,13 @@ export function NavShell({
   onLogout: () => void;
   children: React.ReactNode;
 }) {
+  const [muted, setMuted] = useMuted();
+  function toggleSound() {
+    setMuted(!muted);
+    // unmuting plays a blip so you know it worked
+    if (muted) setTimeout(() => play("pop"), 0);
+  }
+
   return (
     <div className="min-h-dvh">
       {/* full-width brand banner, spans the whole page above the sidebar and content */}
@@ -44,6 +52,13 @@ export function NavShell({
           <span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-sky/90">
             {phaseLabel}
           </span>
+          <button
+            onClick={toggleSound}
+            aria-label={muted ? "turn sound on" : "turn sound off"}
+            className="rounded-full px-1.5 py-1 text-sm text-white/50 hover:text-white/80"
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
           <button
             onClick={onLogout}
             className="rounded-full px-2.5 py-1 text-[11px] text-white/50 hover:text-white/80"
@@ -94,8 +109,14 @@ export function NavShell({
             <span className={TONE_STYLES[myStatus.tone].text}>{myStatus.text}</span>
           </p>
           <button
-            onClick={onLogout}
+            onClick={toggleSound}
             className="mt-2 w-full rounded-xl px-2 py-2 text-left text-xs text-white/40 hover:bg-white/5 hover:text-white/70"
+          >
+            {muted ? "🔇 sound off" : "🔊 sound on"}
+          </button>
+          <button
+            onClick={onLogout}
+            className="w-full rounded-xl px-2 py-2 text-left text-xs text-white/40 hover:bg-white/5 hover:text-white/70"
           >
             log out
           </button>

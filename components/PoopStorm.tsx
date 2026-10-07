@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { play } from "@/lib/sound";
 
 // Deterministic scatter so render stays pure. Enough poop to fill the screen.
 const DROPS = Array.from({ length: 90 }, (_, i) => ({
@@ -24,6 +26,10 @@ export function PoopStorm({
   onPrimary: () => void;
   onDismiss: () => void;
 }) {
+  useEffect(() => {
+    if (open) play("thud");
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (

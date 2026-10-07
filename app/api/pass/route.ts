@@ -41,5 +41,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: 403 });
   }
 
-  return NextResponse.json({ state: toPublicState(state) });
+  return NextResponse.json({ state: toPublicState(state, session.username ?? "") });
 }

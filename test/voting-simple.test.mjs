@@ -47,15 +47,24 @@ test("simple voting: most first-choice votes wins, phase stays open until everyo
 
   const midVote = await admin.client.get("/api/state");
   assert.equal(midVote.data.state.phase, "voting", "phase stays open until everyone's voted");
-  // NOTE: the "ballots stay hidden until results are in" promise (README,
-  // VotingPhase's "ballots stay hidden" copy) is a UI-only convention — no
-  // screen ever renders `state.votes` before the results phase — but the
-  // raw /api/state response does already include full ballots (who voted
-  // for what) for everyone who's voted so far, even mid-voting. Asserting
-  // the real, current shape here rather than the UI-implied one.
-  assert.equal(midVote.data.state.votes.length, 2, "two of three ballots cast so far");
-  const midVoteUsernames = midVote.data.state.votes.map((v) => v.username).sort();
-  assert.deepEqual(midVoteUsernames, ["bob-2", "simple-admin-2"]);
+  // ballots are sealed server-side: mid-vote each viewer only gets their
+  // own ballot back, other people's ballots and the running tallies are
+  // withheld. The "who has voted" flags on the roster stay visible.
+  const midState = midVote.data.state;
+  assert.deepEqual(
+    midState.votes.map((v) => v.username),
+    ["simple-admin-2"],
+    "admin only sees their own ballot mid-vote"
+  );
+  assert.deepEqual(midState.votes[0].order, [r1]);
+  assert.ok(
+    midState.scores.every((s) => s.points === 0 && s.firstPlaceVotes === 0),
+    "running tallies are not leaked mid-vote"
+  );
+  assert.equal(midState.winner, null);
+  assert.equal(midState.users.filter((u) => u.hasVoted).length, 2);
+  const bobView = await bob.client.get("/api/state");
+  assert.deepEqual(bobView.data.state.votes.map((v) => v.username), ["bob-2"]);
 
   const last = await cyn.client.post("/api/vote", { order: [r2] });
   assert.equal(last.status, 200);

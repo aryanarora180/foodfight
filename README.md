@@ -100,10 +100,15 @@ The admin chooses the format each round, right before voting opens:
   whoever's next on those ballots, repeating until someone clears a majority
   (or a full tie among everyone remaining is called as a tie).
 
+A progress bar shows how many of the people coming have voted and who's still
+out (it pulses gold when there's one left), and it ticks softly as each ballot
+lands.
+
 Menu links stay visible on every voting screen, so nobody has to remember
 what a restaurant serves from three screens ago. Ballots stay hidden from
-everyone, including admins, until results are in — the "Ballots so far"
-panel only shows a count, never the actual picks. Once you've voted you can
+everyone, including admins, until results are in, and that's enforced by the
+server, not just the screens: during voting `/api/state` only returns your own
+ballot and zeroed tallies. Once you've voted you can
 still re-open your ballot and re-submit before results drop.
 
 ### Results & reveal
@@ -120,6 +125,9 @@ still re-open your ballot and re-submit before results drop.
 - Simple and points elections get a suspenseful slot-machine name-spin
   before the reveal (also skippable); ranked-choice results that resolve in
   a single round get this spin too instead of the runoff playback.
+- Anyone coming can react to the winner and to each restaurant in the tally
+  with the same 🔥 😍 🤢 👀 as the ballot (not coming means read-only, enforced
+  by the server).
 - Either way: confetti, a crown, the winner's point/vote total, the final
   tally for every restaurant, and everyone's full ballots, visible to
   everyone once revealed.
@@ -138,6 +146,30 @@ every past winner and an admin-only remove (×) per entry. Unlike round
 state, this history is never touched by "reset everything," and an empty
 history shows a "no winners crowned yet" placeholder instead of blank
 scoreboards.
+
+Every restaurant that won in the last ~3 months carries a quiet "won 2 weeks
+ago" note wherever it's listed (the nominate sheet, the ballot, the vote
+screens, the Restaurants tab), so nobody has to remember. It's display only,
+with no handicap or admin setting.
+
+**Badges** sit between the scoreboards and the full history, computed from the
+hall of fame: 🔥 *on a roll* (the latest winning picker has 2+ wins in a
+row), 🔁 *back to back* (the same place won the last 2+ rounds), 👑
+*kingmaker* (3+ winning picks) and 🐐 *goat whisperer* (got a Rodeo Goat place
+to win).
+
+**Replay.** Each win logged from now on keeps a frozen copy of its round. Tap
+"replay" on a history entry to see the runoff diagram (ranked choice), final
+tally and everyone's ballots as they were. Older entries don't have one. The
+ballots aren't in the polled state; they're fetched from `/api/replay?id=` when
+you open a replay, and they disappear when the win is removed.
+
+### Sound
+Synthesized in the browser, no audio files: reel ticks on the name-spin, a
+thud for each runoff elimination, a ding on the reveal, a lock-in click, a
+tick when someone else votes, and a bleat when Rodeo Goat dodges. Mute from the
+sidebar (the speaker icon in the banner on phones); it's remembered per
+device.
 
 ### Admin controls
 Its own tab (Admin 👑, admin-only), grouped like a settings page:

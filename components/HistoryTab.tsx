@@ -1,6 +1,7 @@
 "use client";
 
 import type { PublicState } from "@/lib/types";
+import { dodgyNameSet } from "@/lib/rodeoGoat";
 import { WinnersLog } from "./WinnersLog";
 
 export function HistoryTab({
@@ -18,7 +19,12 @@ export function HistoryTab({
       <p className="mb-6 text-sm text-white/50">
         the hall of fame. top restaurants, top pickers, and every past winner.
       </p>
-      <WinnersLog winnerHistory={state.winnerHistory} isAdmin={isAdmin} onChanged={onChanged} />
+      <WinnersLog
+        winnerHistory={state.winnerHistory}
+        dodgyNames={dodgyNameSet(state.history)}
+        isAdmin={isAdmin}
+        onChanged={onChanged}
+      />
     </div>
   );
 }

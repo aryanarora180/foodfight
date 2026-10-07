@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { HistoryEntry } from "@/lib/types";
+import { wonText } from "@/lib/recentWins";
 import { EditHistoryModal } from "./EditHistoryModal";
 import { ConfirmModal } from "./ConfirmModal";
 import {
@@ -13,10 +14,12 @@ import {
 
 export function RestaurantVault({
   history,
+  lastWon,
   isAdmin,
   onChanged,
 }: {
   history: HistoryEntry[];
+  lastWon?: Map<string, number>;
   isAdmin: boolean;
   onChanged: () => void;
 }) {
@@ -84,7 +87,12 @@ export function RestaurantVault({
           >
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{entry.name}</p>
-              <p className="truncate text-xs text-white/40">added by {entry.username}</p>
+              <p className="truncate text-xs text-white/40">
+                added by {entry.username}
+                {wonText(lastWon, entry.name) && (
+                  <span className="text-gold/70"> · {wonText(lastWon, entry.name)}</span>
+                )}
+              </p>
               {isAdmin && isDodgy(entry) && (
                 <span
                   className="mt-1 flex items-center gap-1.5 text-xs text-white/50"

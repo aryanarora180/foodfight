@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { WinnerRecord } from "@/lib/types";
+import type { PublicWinner } from "@/lib/types";
+import { computeBadges } from "@/lib/badges";
 import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
 import { ConfirmModal } from "./ConfirmModal";
+import { ReplayModal } from "./ReplayModal";
 
-function topBy(entries: WinnerRecord[], keyFn: (w: WinnerRecord) => string) {
+function topBy(entries: PublicWinner[], keyFn: (w: PublicWinner) => string) {
   const counts = new Map<string, number>();
   for (const w of entries) {
     const key = keyFn(w);
@@ -16,15 +18,18 @@ function topBy(entries: WinnerRecord[], keyFn: (w: WinnerRecord) => string) {
 
 export function WinnersLog({
   winnerHistory,
+  dodgyNames,
   isAdmin,
   onChanged,
 }: {
-  winnerHistory: WinnerRecord[];
+  winnerHistory: PublicWinner[];
+  dodgyNames: Set<string>;
   isAdmin: boolean;
   onChanged: () => void;
 }) {
-  const [pendingDelete, setPendingDelete] = useState<WinnerRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PublicWinner | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [replaying, setReplaying] = useState<PublicWinner | null>(null);
 
   async function confirmDelete() {
     const target = pendingDelete;
@@ -56,6 +61,7 @@ export function WinnersLog({
 
   const topRestaurants = topBy(winnerHistory, (w) => w.name);
   const topSubmitters = topBy(winnerHistory, (w) => w.submittedBy);
+  const badges = computeBadges(winnerHistory, dodgyNames);
   const medal = (idx: number) => ["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`;
 
   return (
@@ -68,6 +74,8 @@ export function WinnersLog({
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
+
+      <ReplayModal win={replaying} onClose={() => setReplaying(null)} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="felt-panel neon-border rounded-3xl p-6 text-center">
@@ -114,6 +122,28 @@ export function WinnersLog({
         </div>
       </div>
 
+      {badges.length > 0 && (
+        <div>
+          <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">BADGES</p>
+          <div className="flex flex-wrap gap-2">
+            {badges.map((b) => (
+              <div
+                key={b.id}
+                className="felt-panel flex items-center gap-2.5 rounded-2xl px-4 py-2.5"
+              >
+                <span className="text-xl">{b.emoji}</span>
+                <div className="leading-tight">
+                  <p className="text-sm font-semibold">
+                    {b.who} <span className="font-normal text-gold/80">· {b.title}</span>
+                  </p>
+                  <p className="text-xs text-white/40">{b.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <p className="mb-3 text-xs font-semibold tracking-wide text-sky/80">
           FULL HISTORY ({winnerHistory.length})
@@ -145,17 +175,28 @@ export function WinnersLog({
                   })}
                 </p>
               </div>
+              <div className="flex shrink-0 items-center gap-3 text-xs">
+              {w.hasReplay && (
+                <button
+                  type="button"
+                  onClick={() => setReplaying(w)}
+                  className="text-sky/70 underline hover:text-sky"
+                >
+                  replay
+                </button>
+              )}
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setPendingDelete(w)}
                   disabled={deleting === w.id}
                   aria-label={`remove ${w.name} from history`}
-                  className="shrink-0 text-white/30 hover:text-red-300 disabled:opacity-40"
+                  className="text-base text-white/30 hover:text-red-300 disabled:opacity-40"
                 >
                   ×
                 </button>
               )}
+              </div>
             </div>
           ))}
         </div>

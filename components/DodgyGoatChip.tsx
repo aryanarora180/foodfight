@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { HistoryEntry } from "@/lib/types";
 import { dodgeTries } from "@/lib/rodeoGoat";
+import { play } from "@/lib/sound";
 
 // Rodeo Goat runs away from the cursor in the pick list. It gives up after
 // a set number of dodges (admin-configurable) so it's annoying to pick, not
@@ -74,6 +75,7 @@ export function DodgyGoatChip({
     }
 
     if (!pos) setStart({ x: rect.left, y: rect.top });
+    play("bleat");
     setPos(best);
     setDodges((d) => d + 1);
   }

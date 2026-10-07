@@ -20,5 +20,5 @@ export async function POST() {
     return { ok: true as const };
   });
 
-  return NextResponse.json({ state: toPublicState(state) });
+  return NextResponse.json({ state: toPublicState(state, session.username ?? "") });
 }

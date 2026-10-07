@@ -52,6 +52,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     user: { username: session.username, isAdmin: Boolean(session.isAdmin), mustChangePassword: false },
-    state: toPublicState(state),
+    state: toPublicState(state, session.username ?? ""),
   });
 }

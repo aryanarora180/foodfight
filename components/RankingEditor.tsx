@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Reorder } from "framer-motion";
 import type { Restaurant } from "@/lib/types";
+import { wonText } from "@/lib/recentWins";
 import { PoopStorm } from "./PoopStorm";
 
 const MEDALS = ["🥇", "🥈", "🥉", "🎗️", "🎗️", "🎗️", "🎗️", "🎗️"];
@@ -13,6 +14,7 @@ export function RankingEditor({
   onSubmit,
   submitting,
   dodgyNames,
+  lastWon,
   ctaLabel = "LOCK IN MY VOTES 🔒",
 }: {
   restaurants: Restaurant[];
@@ -20,6 +22,7 @@ export function RankingEditor({
   onSubmit: (order: string[]) => void;
   submitting: boolean;
   dodgyNames: Set<string>;
+  lastWon?: Map<string, number>;
   ctaLabel?: string;
 }) {
   const byId = new Map(restaurants.map((r) => [r.id, r]));
@@ -96,7 +99,12 @@ export function RankingEditor({
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{r.name}</p>
                 <div className="flex items-center gap-2 text-xs text-white/40">
-                  <span className="truncate">picked by {r.submittedBy}</span>
+                  <span className="truncate">
+                    picked by {r.submittedBy}
+                    {wonText(lastWon, r.name) && (
+                      <span className="text-gold/70"> · {wonText(lastWon, r.name)}</span>
+                    )}
+                  </span>
                   <a
                     href={r.url}
                     target="_blank"

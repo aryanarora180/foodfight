@@ -157,7 +157,7 @@ export function computeResults(state: GameState): ResultsComputation {
 // call once, right when a round's phase flips from voting to results — logs
 // a clear (non-tie) winner to the permanent hall-of-fame history.
 export function recordWinner(state: GameState): void {
-  const { scores, winnerId, tie } = computeResults(state);
+  const { scores, winnerId, tie, rounds } = computeResults(state);
   if (tie || !winnerId) return;
   const winner = scores.find((s) => s.restaurant.id === winnerId);
   if (!winner) return;
@@ -172,12 +172,30 @@ export function recordWinner(state: GameState): void {
     firstPlaceVotes: winner.firstPlaceVotes,
     participantCount: Object.keys(state.votes).length,
     decidedAt: Date.now(),
+    round: {
+      restaurants: state.restaurants,
+      votes: Object.values(state.votes),
+      scores: scores.map((s) => ({
+        restaurantId: s.restaurant.id,
+        points: s.points,
+        firstPlaceVotes: s.firstPlaceVotes,
+      })),
+      rankedRounds: state.votingType === "ranked" ? (rounds ?? null) : null,
+    },
   });
 }
 
-export function toPublicState(state: GameState): PublicState {
-  const { scores, winnerId, tie, rounds } = computeResults(state);
-  const winner = scores.find((s) => s.restaurant.id === winnerId) ?? null;
+// `viewer` is the requesting username. Ballots stay sealed server-side until
+// results: during voting each viewer only gets their own ballot back (so they
+// can re-level it), and the running tallies are zeroed so they can't be read
+// off `scores` either. Everyone else's ballots appear once phase is "results".
+export function toPublicState(state: GameState, viewer: string): PublicState {
+  const { scores: realScores, winnerId, tie, rounds } = computeResults(state);
+  const sealed = state.phase !== "results";
+  const scores = sealed
+    ? state.restaurants.map((restaurant) => ({ restaurant, points: 0, firstPlaceVotes: 0 }))
+    : realScores;
+  const winner = realScores.find((s) => s.restaurant.id === winnerId) ?? null;
 
   const users: PublicUser[] = Object.values(state.users)
     .map((u) => {
@@ -198,13 +216,20 @@ export function toPublicState(state: GameState): PublicState {
     a.name.localeCompare(b.name)
   );
 
-  const winnerHistory = [...state.winnerHistory].sort((a, b) => b.decidedAt - a.decidedAt);
+  const winnerHistory = state.winnerHistory
+    .map(({ round, ...w }) => ({ ...w, hasReplay: Boolean(round) }))
+    .sort((a, b) => b.decidedAt - a.decidedAt);
 
   return {
     phase: state.phase,
     votingType: state.votingType,
     restaurants: state.restaurants,
-    votes: state.phase === "submission" ? [] : Object.values(state.votes),
+    votes:
+      state.phase === "results"
+        ? Object.values(state.votes)
+        : Object.values(state.votes).filter(
+            (v) => v.username.toLowerCase() === viewer.toLowerCase()
+          ),
     scores,
     winner: state.phase === "results" && !tie ? winner : null,
     tie: state.phase === "results" && tie,

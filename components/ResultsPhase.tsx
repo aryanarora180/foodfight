@@ -5,6 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import type { PublicState, RankedRound, Restaurant } from "@/lib/types";
 import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
+import { lunchStatus } from "@/lib/lunchStatus";
+import { play } from "@/lib/sound";
+import { ReactionBar, useReactions } from "./ReactionBar";
 import { RankedChoiceFlowChart, rankedCandidateColors } from "./RankedChoiceFlowChart";
 
 const SPIN_STEP_DELAYS = [70, 70, 80, 90, 100, 120, 140, 170, 210, 260, 320, 400, 500, 650];
@@ -25,6 +28,7 @@ function RankedRoundsPlayback({
 
   useEffect(() => {
     const isFinalRound = roundIdx === rounds.length - 1;
+    if (rounds[roundIdx].eliminated.length > 0) play("thud");
     const t = setTimeout(
       () => {
         if (isFinalRound) onDone();
@@ -115,7 +119,18 @@ function RankedRoundsPlayback({
   );
 }
 
-export function ResultsPhase({ state }: { state: PublicState }) {
+export function ResultsPhase({
+  state,
+  username,
+  onChanged,
+}: {
+  state: PublicState;
+  username: string;
+  onChanged: () => void;
+}) {
+  const { pending: pendingReactions, react } = useReactions(onChanged);
+  // Not coming means read-only, reactions included.
+  const readOnly = lunchStatus(state, username).status === "not-coming";
   const confettiFired = useRef(false);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const maxPoints = Math.max(1, ...state.scores.map((s) => s.points));
@@ -148,6 +163,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
           setSpinName(state.winner!.restaurant.name);
           setStage("revealed");
         } else {
+          play("tick", 0.75 + (1 - stepIdx / SPIN_STEP_DELAYS.length) * 0.5);
           setSpinName(pool[stepIdx % pool.length].name);
         }
       }, elapsed);
@@ -169,6 +185,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
   useEffect(() => {
     if (stage !== "revealed" || confettiFired.current) return;
     confettiFired.current = true;
+    if (state.winner) play("ding");
     const colors = ["#ffd23f", "#2f6fed", "#38bdf8", "#1e40af", "#34d399"];
     const duration = 1400;
     const end = Date.now() + duration;
@@ -177,7 +194,7 @@ export function ResultsPhase({ state }: { state: PublicState }) {
       confetti({ particleCount: 4, angle: 120, spread: 70, origin: { x: 1 }, colors });
       if (Date.now() < end) requestAnimationFrame(frame);
     })();
-  }, [stage]);
+  }, [stage, state.winner]);
 
   if (stage === "rounds" && state.rankedRounds) {
     return (
@@ -261,6 +278,13 @@ export function ResultsPhase({ state }: { state: PublicState }) {
             >
               VIEW THE MENU 🍽️
             </a>
+            <ReactionBar
+              restaurant={state.winner.restaurant}
+              pending={pendingReactions}
+              readOnly={readOnly}
+              onReact={react}
+              className="mt-4 justify-center"
+            />
           </div>
         ) : (
           <p className="text-white/50">no votes were cast.</p>
@@ -301,6 +325,13 @@ export function ResultsPhase({ state }: { state: PublicState }) {
                 />
               </div>
               <p className="mt-1 text-xs text-white/40">picked by {s.restaurant.submittedBy}</p>
+              <ReactionBar
+                restaurant={s.restaurant}
+                pending={pendingReactions}
+                readOnly={readOnly}
+                onReact={react}
+                className="mt-2"
+              />
             </motion.div>
           ))}
         </div>

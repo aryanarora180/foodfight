@@ -24,8 +24,12 @@ export async function POST(req: NextRequest) {
   const { restaurantId, emoji } = parsed.data;
 
   const { state, result } = await updateState((state) => {
-    if (!state.users[username.toLowerCase()]) {
+    const user = state.users[username.toLowerCase()];
+    if (!user) {
       return { error: "you've been removed from this round" as const };
+    }
+    if (user.notComing) {
+      return { error: "you're marked as not coming this round" as const };
     }
     const restaurant = state.restaurants.find((r) => r.id === restaurantId);
     if (!restaurant) {
@@ -44,5 +48,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  return NextResponse.json({ state: toPublicState(state) });
+  return NextResponse.json({ state: toPublicState(state, session.username ?? "") });
 }

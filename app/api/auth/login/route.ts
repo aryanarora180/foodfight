@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         user: { username: existing.username, isAdmin: existing.isAdmin, mustChangePassword: false },
-        state: toPublicState(state),
+        state: toPublicState(state, existing.username),
       });
     }
     if (!password) {
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         isAdmin: existing.isAdmin,
         mustChangePassword: Boolean(existing.mustChangePassword),
       },
-      state: toPublicState(peek),
+      state: toPublicState(peek, existing.username),
     });
   }
 
@@ -139,6 +139,6 @@ export async function POST(req: NextRequest) {
       isAdmin: result.user.isAdmin,
       mustChangePassword: Boolean(result.user.mustChangePassword),
     },
-    state: toPublicState(state),
+    state: toPublicState(state, result.user.username),
   });
 }

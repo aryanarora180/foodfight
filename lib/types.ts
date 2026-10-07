@@ -40,6 +40,15 @@ export interface HistoryEntry {
   dodgeTries?: number;
 }
 
+// A frozen copy of how a round played out, kept with its winner so History
+// can replay it later. Never sent with the polled state (see PublicWinner).
+export interface ArchivedRound {
+  restaurants: Restaurant[];
+  votes: VoteRecord[];
+  scores: { restaurantId: string; points: number; firstPlaceVotes: number }[];
+  rankedRounds: RankedRound[] | null;
+}
+
 export interface WinnerRecord {
   id: string;
   restaurantId: string;
@@ -51,7 +60,11 @@ export interface WinnerRecord {
   firstPlaceVotes: number;
   participantCount: number;
   decidedAt: number;
+  // Missing on wins logged before replays existed.
+  round?: ArchivedRound;
 }
+
+export type PublicWinner = Omit<WinnerRecord, "round"> & { hasReplay: boolean };
 
 export interface VoteRecord {
   username: string;
@@ -97,6 +110,6 @@ export interface PublicState {
   rankedRounds: RankedRound[] | null;
   users: PublicUser[];
   history: HistoryEntry[];
-  winnerHistory: WinnerRecord[];
+  winnerHistory: PublicWinner[];
   updatedAt: number;
 }

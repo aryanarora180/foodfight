@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { REACTION_EMOJI, type PublicState as State, type Restaurant } from "@/lib/types";
+import type { PublicState as State, Restaurant } from "@/lib/types";
 import { EditRestaurantModal } from "./EditRestaurantModal";
 import { ConfirmModal } from "./ConfirmModal";
 import { lunchStatus } from "@/lib/lunchStatus";
+import { lastWonByName, wonText } from "@/lib/recentWins";
+import { ReactionBar, useReactions } from "./ReactionBar";
 
 // The ballot: everything nominated so far, as cards. Nominating itself
 // happens from the status card at the top of the tab (it opens a sheet), so
@@ -24,7 +26,8 @@ export function SubmissionPhase({
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
+  const { pending: pendingReactions, react } = useReactions(onChanged);
+  const lastWon = lastWonByName(state.winnerHistory);
 
   // Not coming means read-only: you can look, but not edit or react.
   const readOnly = lunchStatus(state, username).status === "not-coming";
@@ -43,21 +46,6 @@ export function SubmissionPhase({
       onChanged();
     } finally {
       setDeleting(null);
-    }
-  }
-
-  async function react(restaurantId: string, emoji: string) {
-    const key = `${restaurantId}:${emoji}`;
-    setPendingReactions((p) => ({ ...p, [key]: (p[key] ?? 0) + 1 }));
-    try {
-      await fetch("/api/react", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, emoji }),
-      });
-      onChanged();
-    } finally {
-      setPendingReactions((p) => ({ ...p, [key]: Math.max(0, (p[key] ?? 0) - 1) }));
     }
   }
 
@@ -126,41 +114,20 @@ export function SubmissionPhase({
                 <a href={r.url} target="_blank" rel="noreferrer" className="block">
                   <p className="mb-1 text-2xl">🍽️</p>
                   <p className="pr-10 font-semibold">{r.name}</p>
-                  <p className="mt-1 text-xs text-white/40">nominated by {r.submittedBy}</p>
+                  <p className="mt-1 text-xs text-white/40">
+                    nominated by {r.submittedBy}
+                    {wonText(lastWon, r.name) && (
+                      <span className="text-gold/70"> · {wonText(lastWon, r.name)}</span>
+                    )}
+                  </p>
                   <p className="mt-2 text-xs text-sky/70 underline">view menu →</p>
                 </a>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {REACTION_EMOJI.map((emoji) => {
-                    const key = `${r.id}:${emoji}`;
-                    const total = (r.reactions?.[emoji] ?? 0) + (pendingReactions[key] ?? 0);
-                    return (
-                      <motion.button
-                        key={emoji}
-                        type="button"
-                        onClick={() => react(r.id, emoji)}
-                        disabled={readOnly}
-                        whileTap={readOnly ? undefined : { scale: 0.8 }}
-                        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs transition enabled:hover:border-gold/40 enabled:hover:bg-gold/10 enabled:active:border-gold/60 disabled:cursor-default disabled:opacity-60"
-                      >
-                        <span>{emoji}</span>
-                        {total > 0 && (
-                          <AnimatePresence mode="popLayout" initial={false}>
-                            <motion.span
-                              key={total}
-                              initial={{ y: -6, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              exit={{ y: 6, opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                              className="text-white/50"
-                            >
-                              {total}
-                            </motion.span>
-                          </AnimatePresence>
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                <ReactionBar
+                  restaurant={r}
+                  pending={pendingReactions}
+                  readOnly={readOnly}
+                  onReact={react}
+                />
               </motion.div>
             ))}
           </AnimatePresence>

@@ -36,6 +36,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     username: peek.users[key].username,
     tempPassword,
-    state: toPublicState(state),
+    state: toPublicState(state, session.username ?? ""),
   });
 }

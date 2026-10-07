@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import type { PublicState } from "@/lib/types";
 import { RankingEditor } from "./RankingEditor";
 import { SimpleVoteEditor } from "./SimpleVoteEditor";
 import { dodgyNameSet } from "@/lib/rodeoGoat";
+import { lastWonByName } from "@/lib/recentWins";
+import { play } from "@/lib/sound";
 
 const HEADER_COPY: Record<PublicState["votingType"], { title: string; blurb: string }> = {
   simple: {
@@ -41,7 +44,17 @@ export function VotingPhase({
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const copy = HEADER_COPY[state.votingType];
   const dodgyNames = dodgyNameSet(state.history);
+  const lastWon = lastWonByName(state.winnerHistory);
   const requiredVoters = state.users.filter((u) => !u.notComing);
+  const waitingOn = requiredVoters.filter((u) => !u.hasVoted).map((u) => (u.username === username ? "you" : u.username));
+  const voted = requiredVoters.length - waitingOn.length;
+
+  // a soft tick whenever someone else's ballot lands
+  const lastVoted = useRef(voted);
+  useEffect(() => {
+    if (voted > lastVoted.current) play("tick", 1.4);
+    lastVoted.current = voted;
+  }, [voted]);
 
   async function submitVote(order: string[]) {
     setError(null);
@@ -57,6 +70,7 @@ export function VotingPhase({
         setError(data.error ?? "something went wrong");
         return;
       }
+      play("lock");
       setEditing(false);
       onChanged();
     } catch {
@@ -85,6 +99,7 @@ export function VotingPhase({
                 onSubmit={(id) => submitVote([id])}
                 submitting={submitting}
                 dodgyNames={dodgyNames}
+                lastWon={lastWon}
               />
             ) : (
               <RankingEditor
@@ -102,6 +117,7 @@ export function VotingPhase({
                 onSubmit={submitVote}
                 submitting={submitting}
                 dodgyNames={dodgyNames}
+                lastWon={lastWon}
               />
             )
           ) : (
@@ -132,18 +148,44 @@ export function VotingPhase({
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
-        <div>
-          <h3 className="font-display mb-1 text-lg text-sky">
-            Ballots so far ({state.votes.length}/{requiredVoters.length})
-          </h3>
-          <p className="mb-3 text-xs text-white/40">
-            results drop automatically the moment everyone&apos;s voted.
-          </p>
-          <div className="felt-panel rounded-2xl p-6 text-center">
-            <p className="text-sm text-white/50">ballots stay hidden until results are in.</p>
+      <div>
+        <motion.div
+          animate={
+            waitingOn.length === 1
+              ? {
+                  boxShadow: [
+                    "0 0 0px rgba(255,210,63,0)",
+                    "0 0 24px rgba(255,210,63,0.35)",
+                    "0 0 0px rgba(255,210,63,0)",
+                  ],
+                }
+              : { boxShadow: "0 0 0px rgba(255,210,63,0)" }
+          }
+          transition={waitingOn.length === 1 ? { duration: 1.4, repeat: Infinity } : undefined}
+          className="felt-panel rounded-2xl p-5"
+        >
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="text-xs font-semibold tracking-wide text-sky/80">VOTED</p>
+            <p className="font-display text-gold">
+              {voted} of {requiredVoters.length}
+            </p>
           </div>
-        </div>
+          <div className="h-3 overflow-hidden rounded-full bg-black/40">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-royal via-indigo to-sky"
+              initial={false}
+              animate={{ width: `${requiredVoters.length ? (voted / requiredVoters.length) * 100 : 0}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-white/40">
+            {waitingOn.length === 0
+              ? "everyone's in."
+              : waitingOn.length <= 3
+                ? `waiting on ${waitingOn.join(waitingOn.length === 2 ? " and " : ", ")}.`
+                : `waiting on ${waitingOn.length} people.`}
+          </p>
+        </motion.div>
       </div>
     </div>
   );
