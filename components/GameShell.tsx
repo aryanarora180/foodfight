@@ -8,6 +8,7 @@ import { VotingPhase } from "./VotingPhase";
 import { ResultsPhase } from "./ResultsPhase";
 import { AdminPanel } from "./AdminPanel";
 import { RosterTicker } from "./RosterTicker";
+import { LunchStatusCard } from "./LunchStatusCard";
 import { VaultTab } from "./VaultTab";
 import { HistoryTab } from "./HistoryTab";
 import { NavShell, type NavTab } from "./NavShell";
@@ -67,8 +68,15 @@ export function GameShell({
     >
       {tab === "vote" && (
         <div>
+          <LunchStatusCard state={state} username={username} onChanged={() => mutate()} />
+
           <div className="mb-6">
-            <RosterTicker users={state.users} phase={state.phase} />
+            <RosterTicker
+              users={state.users}
+              restaurants={state.restaurants}
+              phase={state.phase}
+              me={username}
+            />
           </div>
 
           <AnimatePresence mode="wait">

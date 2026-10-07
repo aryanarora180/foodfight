@@ -62,6 +62,40 @@ test("skipping submission counts as done without a pick", async () => {
   assert.ok(!res.data.state.restaurants.some((r) => r.submittedBy === "skipper-3"));
 });
 
+test("a skip can be undone, putting the user back to undecided", async () => {
+  const admin = await bootstrapAdmin("sub-admin-unskip");
+  const user = await createActivatedUser(admin.client, "unskipper-1");
+
+  await user.client.post("/api/pass");
+  const undo = await user.client.post("/api/pass", { value: false });
+  assert.equal(undo.status, 200);
+  const me = undo.data.state.users.find((u) => u.username === "unskipper-1");
+  assert.equal(me.passedSubmission, false);
+  assert.equal(me.hasSubmitted, false, "undecided users are not counted as done");
+
+  // Undoing when there is nothing to undo is harmless, and an explicit
+  // { value: true } behaves like the old body-less call.
+  const again = await user.client.post("/api/pass", { value: false });
+  assert.equal(again.status, 200);
+  const redo = await user.client.post("/api/pass", { value: true });
+  assert.equal(redo.data.state.users.find((u) => u.username === "unskipper-1").passedSubmission, true);
+
+  const bad = await user.client.post("/api/pass", { value: "yes" });
+  assert.equal(bad.status, 400);
+});
+
+test("going from just-voting to not-coming and back keeps the skip", async () => {
+  const admin = await bootstrapAdmin("sub-admin-roundtrip");
+  const user = await createActivatedUser(admin.client, "roundtrip-1");
+
+  await user.client.post("/api/pass");
+  await user.client.post("/api/not-coming", { value: true });
+  const back = await user.client.post("/api/not-coming", { value: false });
+  const me = back.data.state.users.find((u) => u.username === "roundtrip-1");
+  assert.equal(me.notComing, false);
+  assert.equal(me.passedSubmission, true, "the skip survives a not-coming round trip");
+});
+
 test("self-editing your own current pick", async () => {
   const admin = await bootstrapAdmin("sub-admin-4");
   const idA = await addToHistory(admin.client, "Original Name");

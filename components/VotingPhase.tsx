@@ -37,7 +37,6 @@ export function VotingPhase({
   const [editing, setEditing] = useState(!myVote);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [togglingNotComing, setTogglingNotComing] = useState(false);
 
   const restaurantById = new Map(state.restaurants.map((r) => [r.id, r]));
   const copy = HEADER_COPY[state.votingType];
@@ -67,117 +66,71 @@ export function VotingPhase({
     }
   }
 
-  async function setNotComing(value: boolean) {
-    setError(null);
-    setTogglingNotComing(true);
-    try {
-      const res = await fetch("/api/not-coming", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "something went wrong");
-        return;
-      }
-      onChanged();
-    } catch {
-      setError("network error. try again.");
-    } finally {
-      setTogglingNotComing(false);
-    }
-  }
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-      <div className="felt-panel neon-border rounded-3xl p-6">
-        <h2 className="font-display mb-1 text-xl text-gold">
-          {notComing ? "Spectating this round" : copy.title}
-        </h2>
-        {!notComing && <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>}
+    <div className={`grid gap-6 ${notComing ? "" : "lg:grid-cols-[420px_1fr]"}`}>
+      {!notComing && (
+        <div className="felt-panel neon-border rounded-3xl p-6">
+          <h2 className="font-display mb-1 text-xl text-gold">{copy.title}</h2>
+          <p className="mb-5 text-sm text-white/50">{copy.blurb}</p>
 
-        {error && (
-          <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
-        )}
+          {error && (
+            <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+          )}
 
-        {notComing ? (
-          <div>
-            <p className="mb-5 text-sm text-white/50">
-              you&apos;re marked as not coming. sit back, no vote needed from you.
-            </p>
-            <button
-              type="button"
-              onClick={() => setNotComing(false)}
-              disabled={togglingNotComing}
-              className="chip-btn-ghost w-full rounded-full py-2.5 text-sm disabled:opacity-40"
-            >
-              {togglingNotComing ? "…" : "actually, count me in"}
-            </button>
-          </div>
-        ) : editing ? (
-          state.votingType === "simple" ? (
-            <SimpleVoteEditor
-              restaurants={state.restaurants}
-              initialPick={myVote?.order[0] ?? null}
-              onSubmit={(id) => submitVote([id])}
-              submitting={submitting}
-              dodgyNames={dodgyNames}
-            />
+          {editing ? (
+            state.votingType === "simple" ? (
+              <SimpleVoteEditor
+                restaurants={state.restaurants}
+                initialPick={myVote?.order[0] ?? null}
+                onSubmit={(id) => submitVote([id])}
+                submitting={submitting}
+                dodgyNames={dodgyNames}
+              />
+            ) : (
+              <RankingEditor
+                restaurants={state.restaurants}
+                initialOrder={
+                  myVote?.order ?? [
+                    ...state.restaurants
+                      .filter((r) => !dodgyNames.has(r.name.trim().toLowerCase()))
+                      .map((r) => r.id),
+                    ...state.restaurants
+                      .filter((r) => dodgyNames.has(r.name.trim().toLowerCase()))
+                      .map((r) => r.id),
+                  ]
+                }
+                onSubmit={submitVote}
+                submitting={submitting}
+                dodgyNames={dodgyNames}
+              />
+            )
           ) : (
-            <RankingEditor
-              restaurants={state.restaurants}
-              initialOrder={
-                myVote?.order ?? [
-                  ...state.restaurants
-                    .filter((r) => !dodgyNames.has(r.name.trim().toLowerCase()))
-                    .map((r) => r.id),
-                  ...state.restaurants
-                    .filter((r) => dodgyNames.has(r.name.trim().toLowerCase()))
-                    .map((r) => r.id),
-                ]
-              }
-              onSubmit={submitVote}
-              submitting={submitting}
-              dodgyNames={dodgyNames}
-            />
-          )
-        ) : (
-          <div>
-            <div className="flex flex-col gap-2">
-              {myVote?.order.map((id, idx) => {
-                const r = restaurantById.get(id);
-                if (!r) return null;
-                return (
-                  <div
-                    key={id}
-                    className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2"
-                  >
-                    <span className="text-lg">{["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`}</span>
-                    <span className="flex-1 truncate">{r.name}</span>
-                  </div>
-                );
-              })}
+            <div>
+              <div className="flex flex-col gap-2">
+                {myVote?.order.map((id, idx) => {
+                  const r = restaurantById.get(id);
+                  if (!r) return null;
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2"
+                    >
+                      <span className="text-lg">{["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`}</span>
+                      <span className="flex-1 truncate">{r.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setEditing(true)}
+                className="chip-btn-ghost mt-4 w-full rounded-full py-2.5 text-sm"
+              >
+                re-level my vote ✏️
+              </button>
             </div>
-            <button
-              onClick={() => setEditing(true)}
-              className="chip-btn-ghost mt-4 w-full rounded-full py-2.5 text-sm"
-            >
-              re-level my vote ✏️
-            </button>
-          </div>
-        )}
-        {!notComing && (
-          <button
-            type="button"
-            onClick={() => setNotComing(true)}
-            disabled={togglingNotComing}
-            className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
-          >
-            {togglingNotComing ? "…" : "not coming this round?"}
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-6">
         <div>

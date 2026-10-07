@@ -9,6 +9,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { RodeoGoatModal } from "./RodeoGoatModal";
 import { DodgyGoatChip } from "./DodgyGoatChip";
 import { isDodgy } from "@/lib/rodeoGoat";
+import { lunchStatus } from "@/lib/lunchStatus";
 
 export function SubmissionPhase({
   state,
@@ -22,49 +23,27 @@ export function SubmissionPhase({
   onChanged: () => void;
 }) {
   const mine = state.restaurants.find((r) => r.submittedBy === username);
-  const myUser = state.users.find((u) => u.username === username);
   const [error, setError] = useState<string | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
-  const [passing, setPassing] = useState(false);
-  const [overridePass, setOverridePass] = useState(false);
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [removingMine, setRemovingMine] = useState(false);
   const [pendingReactions, setPendingReactions] = useState<Record<string, number>>({});
-  const [togglingNotComing, setTogglingNotComing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [showGoat, setShowGoat] = useState(false);
 
-  const notComing = Boolean(myUser?.notComing);
-  const showPassedCard = Boolean(myUser?.passedSubmission) && !mine && !overridePass;
+  // Only people who are in and still picking (or already picked) see the
+  // list. Just-voting and not-coming people get the whole width for the
+  // grid of what everyone else submitted. Status itself lives in the card
+  // at the top of the tab.
+  const { status } = lunchStatus(state, username);
+  const showPicker = status === "undecided" || status === "picked";
   const pickedElsewhere = new Set(
     state.restaurants
       .filter((r) => r.submittedBy !== username)
       .map((r) => r.name.trim().toLowerCase())
   );
-
-  async function setNotComing(value: boolean) {
-    setError(null);
-    setTogglingNotComing(true);
-    try {
-      const res = await fetch("/api/not-coming", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "something went wrong");
-        return;
-      }
-      onChanged();
-    } catch {
-      setError("network error. try again.");
-    } finally {
-      setTogglingNotComing(false);
-    }
-  }
 
   async function pick(historyId: string) {
     setError(null);
@@ -140,26 +119,8 @@ export function SubmissionPhase({
     }
   }
 
-  async function pass() {
-    setError(null);
-    setPassing(true);
-    try {
-      const res = await fetch("/api/pass", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "something went wrong");
-        return;
-      }
-      onChanged();
-    } catch {
-      setError("network error. try again.");
-    } finally {
-      setPassing(false);
-    }
-  }
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+    <div className={`grid gap-6 ${showPicker ? "lg:grid-cols-[380px_1fr]" : ""}`}>
       <EditRestaurantModal
         restaurant={editing}
         selfService={editing?.submittedBy === username}
@@ -186,166 +147,94 @@ export function SubmissionPhase({
           onChanged();
         }}
       />
-      <div className="felt-panel neon-border rounded-3xl p-6">
-        {notComing ? (
-          <>
-            <h2 className="font-display mb-1 text-xl text-gold">Spectating this round</h2>
-            <p className="mb-5 text-sm text-white/50">
-              you&apos;re marked as not coming. no need to submit or vote, you can still see
-              what everyone else picks below.
+      {showPicker && (
+        <div id="restaurant-picker" className="felt-panel neon-border rounded-3xl p-6">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="font-display text-xl text-gold">
+              {mine ? "Your pick" : "Pick a restaurant"}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowAdd(true)}
+              aria-label="add a restaurant"
+              title="add a restaurant"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-base font-semibold text-gold transition hover:bg-gold/25"
+            >
+              +
+            </button>
+          </div>
+
+          {error && (
+            <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
+          )}
+
+          {state.history.length === 0 ? (
+            <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-white/40">
+              no restaurants yet. add some from the Restaurants tab first.
             </p>
-            {error && (
-              <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">{error}</p>
-            )}
-            <button
-              type="button"
-              onClick={() => setNotComing(false)}
-              disabled={togglingNotComing}
-              className="chip-btn-ghost w-full rounded-full py-2.5 text-sm disabled:opacity-40"
-            >
-              {togglingNotComing ? "…" : "actually, count me in"}
-            </button>
-          </>
-        ) : (
-          <>
-            {showPassedCard ? (
-              <>
-                <h2 className="font-display mb-1 text-xl text-gold">Sitting this one out</h2>
-                <p className="mb-5 text-sm text-white/50">
-                  no pick from you this round, but you&apos;ll still need to vote once voting
-                  opens.
-                </p>
-                {error && (
-                  <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
-                    {error}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setOverridePass(true)}
-                  className="chip-btn-ghost w-full rounded-full py-2.5 text-sm"
-                >
-                  actually, let me pick something
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <h2 className="font-display text-xl text-gold">
-                    {mine ? "Update your pick" : "Pick a restaurant"}
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setShowAdd(true)}
-                    aria-label="add a restaurant"
-                    title="add a restaurant"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-base font-semibold text-gold transition hover:bg-gold/25"
+          ) : (
+            <div className="flex max-h-[360px] flex-wrap gap-2 overflow-y-auto pr-1">
+              {state.history.map((entry) => {
+                const taken = pickedElsewhere.has(entry.name.trim().toLowerCase());
+                const selected = mine?.name.trim().toLowerCase() === entry.name.trim().toLowerCase();
+                return (
+                  <div
+                    key={entry.id}
+                    className={`flex items-stretch overflow-hidden rounded-full border text-sm font-medium transition ${
+                      selected
+                        ? "!border-gold/70 !bg-gold/10 text-gold"
+                        : taken
+                          ? "border-white/5 text-white/30"
+                          : "border-white/10 bg-black/20"
+                    }`}
                   >
-                    +
-                  </button>
-                </div>
-                <p className="mb-5 text-sm text-white/50">
-                  one pick per person, straight from the restaurant list. you can change it
-                  anytime before voting starts.
-                </p>
-
-                {error && (
-                  <p className="mb-4 rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-300">
-                    {error}
-                  </p>
-                )}
-
-                {state.history.length === 0 ? (
-                  <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-6 text-center text-sm text-white/40">
-                    no restaurants yet. add some from the Restaurants tab first.
-                  </p>
-                ) : (
-                  <div className="flex max-h-[360px] flex-wrap gap-2 overflow-y-auto pr-1">
-                    {state.history.map((entry) => {
-                      const taken = pickedElsewhere.has(entry.name.trim().toLowerCase());
-                      const selected = mine?.name.trim().toLowerCase() === entry.name.trim().toLowerCase();
-                      return (
-                        <div
-                          key={entry.id}
-                          className={`flex items-stretch overflow-hidden rounded-full border text-sm font-medium transition ${
-                            selected
-                              ? "!border-gold/70 !bg-gold/10 text-gold"
-                              : taken
-                                ? "border-white/5 text-white/30"
-                                : "border-white/10 bg-black/20"
-                          }`}
-                        >
-                          {isDodgy(entry) && !taken && !selected ? (
-                            <DodgyGoatChip
-                              entry={entry}
-                              onPick={() => pick(entry.id)}
-                              disabled={picking !== null}
-                              busy={picking === entry.id}
-                            />
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => pick(entry.id)}
-                              disabled={taken || picking !== null}
-                              className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
-                            >
-                              {picking === entry.id ? "…" : entry.name}
-                            </button>
-                          )}
-                          <a
-                            href={entry.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`view ${entry.name} menu`}
-                            className={`flex items-center border-l px-3 py-2 text-xs transition ${
-                              selected
-                                ? "border-gold/30 text-gold/70 hover:text-gold"
-                                : "border-white/10 text-white/40 hover:bg-white/5 hover:text-sky"
-                            }`}
-                          >
-                            menu
-                          </a>
-                        </div>
-                      );
-                    })}
+                    {isDodgy(entry) && !taken && !selected ? (
+                      <DodgyGoatChip
+                        entry={entry}
+                        onPick={() => pick(entry.id)}
+                        disabled={picking !== null}
+                        busy={picking === entry.id}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => pick(entry.id)}
+                        disabled={taken || picking !== null}
+                        className={`px-4 py-2 disabled:cursor-not-allowed ${taken ? "line-through" : "hover:opacity-80"}`}
+                      >
+                        {picking === entry.id ? "…" : entry.name}
+                      </button>
+                    )}
+                    <a
+                      href={entry.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`view ${entry.name} menu`}
+                      className={`flex items-center border-l px-3 py-2 text-xs transition ${
+                        selected
+                          ? "border-gold/30 text-gold/70 hover:text-gold"
+                          : "border-white/10 text-white/40 hover:bg-white/5 hover:text-sky"
+                      }`}
+                    >
+                      menu
+                    </a>
                   </div>
-                )}
-                {!mine && (
-                  <button
-                    type="button"
-                    onClick={pass}
-                    disabled={passing}
-                    className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm disabled:opacity-40"
-                  >
-                    {passing ? "…" : "skip, no pick from me"}
-                  </button>
-                )}
-                {mine && (
-                  <button
-                    type="button"
-                    onClick={removeMyPick}
-                    disabled={removingMine}
-                    className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
-                  >
-                    {removingMine ? "removing…" : "remove my pick"}
-                  </button>
-                )}
-                <p className="mt-2 text-center text-xs text-white/30">
-                  you&apos;ll still need to vote once voting opens, pick or no pick.
-                </p>
-              </>
-            )}
+                );
+              })}
+            </div>
+          )}
+          {mine && (
             <button
               type="button"
-              onClick={() => setNotComing(true)}
-              disabled={togglingNotComing}
-              className="mt-3 w-full rounded-full py-2 text-center text-xs text-white/40 transition hover:text-gold disabled:opacity-40"
+              onClick={removeMyPick}
+              disabled={removingMine}
+              className="chip-btn-ghost mt-3 w-full rounded-full py-2.5 text-sm !text-red-300/80 hover:!text-red-300 disabled:opacity-40"
             >
-              {togglingNotComing ? "…" : "not coming this round?"}
+              {removingMine ? "removing…" : "remove my pick"}
             </button>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div>
         <h3 className="font-display mb-3 text-lg text-sky">

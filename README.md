@@ -70,10 +70,19 @@ size, the same way a Mac app's sidebar collapses to an iPhone tab bar:
 - **Reactions** — react to any submitted pick with 🔥 😍 🤢 👀. No limit,
   mash the same emoji as many times as you want, just for fun. Counts update
   live for everyone.
-- Don't want to submit anything? Hit **skip, no pick from me** — you'll still
-  need to vote once voting opens, pick or no pick. Once you've skipped, that
-  choice sticks (shown as "sitting this one out") until you tap "actually,
-  let me pick something."
+- **Your lunch card** sits at the top of the Vote tab and is the one place
+  to say where you stand. Three explicit choices, each with a one-line
+  description, the current one highlighted, and a headline with your state
+  ("you haven't chosen yet", "you picked X", "you're just voting", "you're
+  not coming"). Until you choose, the card glows and the headline says so:
+  - **picking a place**: you choose a restaurant from the list below.
+  - **just voting**: no pick from you, but you're in and you still vote.
+    This is the old "skip" and it does not mean you're not coming.
+  - **not coming**: skipping lunch, no pick or vote needed.
+  Switching is one tap. Moving from picked to just voting asks first,
+  because it takes your pick off the table. Your choice sticks until you
+  change it. The pick list only shows while you're picking; just-voting and
+  not-coming people see the grid of everyone else's picks full width.
 - Admins can edit the name/link on anyone's submitted pick, or delete it
   outright (deleting frees up that submitter to pick again); you can always
   edit or remove your own pick.
@@ -143,25 +152,28 @@ Its own tab (Admin 👑, admin-only), grouped like a settings page:
   hall of fame untouched.
 
 ### Live roster
-A status strip at the top of the Vote tab always shows who's in the round
-and where they stand: "WHO'S IN (n/total)" during submissions, "WHO'S VOTED
-(n/total)" during voting, each person a compact tile with a status dot and
-plain-language status (`locked in a pick` / `voted`, `waiting`, `sitting
-out`, `not coming`). Pure status display, no controls — those live in Admin.
-Anyone marked not coming gets grouped into their own "NOT COMING" section
-below the main roster instead of counting toward the total.
+A status strip under the lunch card shows who's in the round and where they
+stand: "DECIDED (n/total)" during submissions, "VOTED (n/total)" during
+voting. Each person is a compact tile with one plain-language status:
+`picked`, `just voting`, `deciding` (in, but hasn't chosen yet), `not
+coming`, and during voting `voted` / `yet to vote`. Your own tile is marked
+"(you)". Pure status display, no controls; those live in Admin. Anyone
+marked not coming gets grouped into their own "NOT COMING" section below the
+main roster instead of counting toward the total, and "just voting" counts as
+decided so nobody holds up the round by not picking a restaurant.
 
-### Spectating
-A **"not coming this round?"** link sits right in the submission and voting
-panels on Vote, the place to mark yourself out. Toggle it on and you become
-a pure spectator: no need to submit or vote, and you're pulled out of the
-"everyone's in" / "everyone's voted" counts so you can't accidentally hold
-up the round. You still see everything everyone else does — submitted picks
-and results once they drop — just like an active participant, with no
-elevated visibility into sealed ballots. The flag carries over between
-rounds, set it once and it sticks until you (or an admin) flip it back, so
-you don't have to re-flag yourself every time someone resets the board.
-Admins can mark or un-mark anyone from the Admin tab's People list.
+### Not coming
+Choose **not coming** on the lunch card (or the "not coming?" button during
+voting) and you become a pure spectator: no need to submit or vote, and
+you're pulled out of the "decided" / "voted" counts so you can't accidentally
+hold up the round. You still see everything everyone else does (submitted
+picks and results once they drop) with no elevated visibility into sealed
+ballots. The flag carries over between rounds, set it once and it sticks
+until you (or an admin) flip it back, so you don't have to re-flag yourself
+every time someone resets the board. During voting the lunch card shrinks to
+a status line ("your vote is needed" / "your vote is in" / "you're not
+coming") with a "count me in" button when you're out. Admins can mark or
+un-mark anyone from the Admin tab's People list.
 
 ## Tech stack
 
