@@ -12,6 +12,7 @@ import { LunchStatusCard } from "./LunchStatusCard";
 import { PhaseSteps } from "./PhaseSteps";
 import { VaultTab } from "./VaultTab";
 import { HistoryTab } from "./HistoryTab";
+import { FoodFightDog } from "./FoodFightDog";
 import { NavShell, type NavTab } from "./NavShell";
 import { statusWord } from "@/lib/lunchStatus";
 
@@ -71,7 +72,10 @@ export function GameShell({
     >
       {tab === "vote" && (
         <div>
-          <h2 className="font-display mb-1 text-2xl text-gold">Vote</h2>
+          <div className="mb-1 flex items-end justify-between">
+            <h2 className="font-display text-2xl text-gold">Vote</h2>
+            {state.phase !== "results" && <FoodFightDog className="-mb-1 w-14 sm:w-16" />}
+          </div>
           <PhaseSteps phase={state.phase} />
 
           <div className="mb-6">

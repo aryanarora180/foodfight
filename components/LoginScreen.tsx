@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FoodFightDog } from "./FoodFightDog";
 import { motion } from "framer-motion";
 
 export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
@@ -58,6 +59,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md"
       >
+        <FoodFightDog className="mx-auto mb-2 w-28 sm:w-32" />
         <div className="bulb-border felt-panel neon-border mb-8 rounded-3xl px-6 py-8 text-center">
           <h1 className="font-display neon-text text-5xl leading-tight sm:text-6xl">
             FOOD

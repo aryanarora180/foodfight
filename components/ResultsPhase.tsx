@@ -7,6 +7,7 @@ import type { PublicState, RankedRound, Restaurant } from "@/lib/types";
 import { VOTING_TYPE_LABEL } from "@/lib/gameLogic";
 import { lunchStatus } from "@/lib/lunchStatus";
 import { play } from "@/lib/sound";
+import { FoodFightDog } from "./FoodFightDog";
 import { ReactionBar, useReactions } from "./ReactionBar";
 import { RankedChoiceFlowChart, rankedCandidateColors } from "./RankedChoiceFlowChart";
 
@@ -243,6 +244,7 @@ export function ResultsPhase({
   return (
     <div className="flex flex-col gap-8">
       <div className="text-center">
+        <FoodFightDog className="mx-auto mb-3 w-24 sm:w-28" />
         {state.tie ? (
           <>
             <p className="text-5xl">🤝</p>
